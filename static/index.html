@@ -6,7 +6,7 @@
   <title>画廊 · 艺术展览</title>
   <style>
     /* ========================================================
-       1. 核心基础重置与系统变量
+       1. 基础重置与色彩变量系统
        ======================================================== */
     *, *::before, *::after {
       box-sizing: border-box;
@@ -15,77 +15,73 @@
     }
 
     :root {
-      /* 基础页面色彩 (随系列动态平滑过渡) */
-      --site-bg: #f8fafc;
-      --site-surface: #ffffff;
-      --site-text: #0f172a;
-      --site-muted: #64748b;
-      --site-accent: #ff2a85;
-      --site-border: rgba(226, 232, 240, 0.8);
-      --site-tag-bg: rgba(255, 42, 133, 0.1);
-      --site-tag-text: #ff2a85;
-      --nav-bg: rgba(255, 255, 255, 0.88);
-      --card-radius: 20px;
+      /* 当前主题变量 (随系列动态平滑平滑过渡) */
+      --theme-bg: #0b0f17;
+      --theme-bg-gradient: radial-gradient(circle at 75% 35%, #182235 0%, #0b0f17 100%);
+      --theme-accent: #38bdf8;
+      --theme-accent-glow: rgba(56, 189, 248, 0.45);
+      --theme-text: #ffffff;
+      --theme-text-muted: #94a3b8;
+      --theme-border: rgba(255, 255, 255, 0.12);
+      --theme-grid-line: rgba(56, 189, 248, 0.18);
       --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
       --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
-      --ease-out: cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    /* 系列展览暗色专属模式变量 (动态由 JS 注入并平滑渐变) */
-    body.series-mode, body.photo-mode {
-      --site-bg: #0b0d11;
-      --site-surface: #13171f;
-      --site-text: #f8fafc;
-      --site-muted: #8292a6;
-      --site-border: rgba(255, 255, 255, 0.08);
-      --nav-bg: rgba(11, 13, 17, 0.88);
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--site-bg);
-      color: var(--site-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background-color: var(--theme-bg);
+      color: var(--theme-text);
       line-height: 1.6;
       overflow-x: hidden;
       min-height: 100vh;
-      transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                  color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background-color 0.8s var(--ease-smooth);
       -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    /* 全屏动态背景 Canvas (绘制星尘浮动、3D透视网格、斜向发光导引线) */
+    #bgCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      transition: opacity 0.6s ease;
     }
 
     /* 滚动条美化 */
     ::-webkit-scrollbar {
-      width: 7px;
-      height: 7px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(120, 120, 120, 0.25);
+      background: rgba(255, 255, 255, 0.2);
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: var(--site-accent);
+      background: var(--theme-accent);
     }
 
     /* ========================================================
        2. 顶部工具栏 (Navbar)
-       保留且仅保留：主页、搜索、全局音频控制
+       保留：主页、搜索、音频控制，以及右侧参考图风格导航指示
        ======================================================== */
     .navbar {
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
       z-index: 100;
-      background: var(--nav-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--site-border);
-      height: 64px;
       display: flex;
       align-items: center;
-      padding: 0 28px;
-      transition: background 0.6s ease, border-color 0.6s ease;
+      padding: 0 40px;
+      background: linear-gradient(to bottom, rgba(11, 15, 23, 0.85) 0%, transparent 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
     .navbar-container {
       width: 100%;
@@ -94,145 +90,165 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
     }
 
-    /* 品牌 Logo */
+    /* 品牌区 */
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      text-decoration: none;
       cursor: pointer;
-      user-select: none;
+      text-decoration: none;
     }
     .brand-logo-badge {
       background: linear-gradient(135deg, #ff2a85 0%, #ff529a 100%);
       color: white;
       font-weight: 800;
-      font-size: 16px;
+      font-size: 15px;
       padding: 4px 14px;
       border-radius: 9999px;
       letter-spacing: -0.5px;
       box-shadow: 0 4px 12px rgba(255, 42, 133, 0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     .brand-title {
       font-size: 19px;
       font-weight: 700;
+      color: #ffffff;
       letter-spacing: -0.5px;
-      color: var(--site-text);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .brand-sub {
-      font-size: 12px;
-      color: var(--site-muted);
-      font-weight: 500;
-      font-family: monospace;
-      letter-spacing: 0.5px;
     }
 
-    /* 导航操作区 (主页 + 搜索 + 音频) */
+    /* 中部搜索与主页 */
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
-
-    /* 主页按钮 */
     .nav-btn {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 8px 16px;
+      gap: 6px;
+      padding: 7px 16px;
       border-radius: 9999px;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: var(--site-muted);
-      background: transparent;
-      border: 1px solid transparent;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
       transition: all 0.25s ease;
       text-decoration: none;
     }
-    .nav-btn:hover {
-      color: var(--site-accent);
-      background: var(--site-tag-bg);
-    }
-    .nav-btn.active {
-      color: var(--site-accent);
-      background: var(--site-tag-bg);
-      font-weight: 700;
+    .nav-btn:hover, .nav-btn.active {
+      color: #ffffff;
+      border-color: var(--theme-accent);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 14px var(--theme-accent-glow);
     }
 
-    /* 搜索栏 */
+    /* 搜索框 */
     .search-wrapper {
       position: relative;
       display: flex;
       align-items: center;
-      width: 260px;
-      transition: width 0.35s var(--ease-smooth);
+      width: 240px;
+      transition: width 0.3s var(--ease-smooth);
     }
     .search-wrapper.focused {
-      width: 360px;
+      width: 340px;
     }
     .search-icon {
       position: absolute;
-      left: 13px;
-      color: var(--site-muted);
+      left: 12px;
+      color: #94a3b8;
       pointer-events: none;
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
     }
     .search-input {
       width: 100%;
-      height: 38px;
-      padding: 8px 36px 8px 38px;
+      height: 36px;
+      padding: 6px 34px 6px 36px;
       border-radius: 9999px;
-      border: 1.5px solid var(--site-border);
-      background: rgba(125, 125, 125, 0.05);
-      font-size: 13.5px;
-      color: var(--site-text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+      color: #ffffff;
       outline: none;
-      transition: all 0.25s ease;
+      transition: all 0.2s;
     }
     .search-input:focus {
-      background: var(--site-surface);
-      border-color: var(--site-accent);
-      box-shadow: 0 0 0 3px rgba(255, 42, 133, 0.16);
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--theme-accent);
+      box-shadow: 0 0 16px var(--theme-accent-glow);
     }
     .search-clear {
       position: absolute;
       right: 12px;
-      background: rgba(125, 125, 125, 0.2);
+      background: rgba(255, 255, 255, 0.2);
       border: none;
-      width: 19px;
-      height: 19px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       display: none;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      color: var(--site-text);
-      font-size: 12px;
+      color: white;
+      font-size: 11px;
     }
-    .search-clear.visible {
-      display: flex;
-    }
+    .search-clear.visible { display: flex; }
     .search-shortcut {
       position: absolute;
       right: 12px;
-      padding: 1px 6px;
-      background: rgba(125, 125, 125, 0.15);
-      color: var(--site-muted);
+      padding: 1px 5px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
       font-size: 11px;
       border-radius: 4px;
       pointer-events: none;
       font-family: monospace;
+    }
+
+    /* 右侧参考图风格导航指示 (首页 页面 一一一 01 / 03) */
+    .nav-reference-indicator {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 14px;
+      color: #cbd5e1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .nav-link-item {
+      cursor: pointer;
+      transition: color 0.2s;
+      letter-spacing: 1px;
+    }
+    .nav-link-item:hover, .nav-link-item.active {
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .nav-dash-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: monospace;
+      color: #94a3b8;
+    }
+    .nav-dashes {
+      letter-spacing: 3px;
+      color: var(--theme-accent);
+      font-weight: 700;
+      opacity: 0.85;
+    }
+    .nav-counter {
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .nav-counter span {
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 400;
     }
 
     /* 全局音频氛围开关 */
@@ -240,23 +256,20 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 7px 14px;
+      padding: 6px 14px;
       border-radius: 9999px;
-      border: 1px solid var(--site-border);
-      background: rgba(125, 125, 125, 0.05);
-      color: var(--site-text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
       font-size: 12px;
-      font-weight: 600;
       cursor: pointer;
-      user-select: none;
-      transition: all 0.25s ease;
       font-family: monospace;
-      letter-spacing: 0.5px;
+      transition: all 0.25s;
     }
-    .audio-pill:hover {
-      border-color: var(--site-accent);
-      background: var(--site-tag-bg);
-      color: var(--site-accent);
+    .audio-pill:hover, .audio-pill.playing {
+      border-color: var(--theme-accent);
+      color: #ffffff;
+      box-shadow: 0 0 12px var(--theme-accent-glow);
     }
     .audio-waveform {
       display: flex;
@@ -267,12 +280,12 @@
     .audio-bar {
       width: 2.5px;
       height: 4px;
-      background: var(--site-muted);
+      background: #64748b;
       border-radius: 2px;
       transition: height 0.2s, background-color 0.2s;
     }
     .audio-pill.playing .audio-bar {
-      background: var(--site-accent);
+      background: var(--theme-accent);
       animation: soundWave 1.1s ease-in-out infinite alternate;
     }
     .audio-pill.playing .audio-bar:nth-child(1) { animation-delay: 0.1s; }
@@ -286,41 +299,41 @@
     }
 
     /* ========================================================
-       3. 页面无缝转场幕布 (Curtain Transition)
+       3. 页面转场遮罩 (Curtain Transition)
        ======================================================== */
     .transition-curtain {
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: #0b0d11;
+      background: #090c12;
       display: flex;
       align-items: center;
       justify-content: center;
       pointer-events: none;
       opacity: 0;
       transform: translateY(100%);
-      transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.3s;
+      transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.3s;
     }
     .transition-curtain.active {
       pointer-events: auto;
       opacity: 1;
       transform: translateY(0);
     }
-    .curtain-logo {
+    .curtain-text {
       color: #ffffff;
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 800;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
     .curtain-spinner {
       width: 32px;
       height: 32px;
       border: 3px solid rgba(255, 255, 255, 0.15);
-      border-top-color: var(--site-accent);
+      border-top-color: var(--theme-accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -328,84 +341,50 @@
       to { transform: rotate(360deg); }
     }
 
-    /* ========================================================
-       4. 视图管理器 (View Container)
-       ======================================================== */
+    /* 视图切换容器 */
     .view-section {
       display: none;
       width: 100%;
-      opacity: 0;
-      transition: opacity 0.4s var(--ease-smooth);
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
     }
     .view-section.current {
       display: block;
-      opacity: 1;
     }
 
     /* ========================================================
-       5. 视图一：主页瀑布流 (Home Grid View)
+       4. 视图一：主页系列瀑布流 (Home Grid View)
        ======================================================== */
     .home-container {
       width: 100%;
       max-width: 1800px;
       margin: 0 auto;
-      padding: 24px 24px 80px 24px;
+      padding: 94px 32px 80px 32px;
     }
-
-    /* 通知广播栏 */
-    .notice-bar {
-      background-color: #fef9c3;
-      border-bottom: 1px solid #fef08a;
-      color: #854d0e;
-      font-size: 13.5px;
-      padding: 8px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .notice-bar.dark-notice {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.1);
-      color: #94a3b8;
-    }
-    .notice-close {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: inherit;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 4px;
-    }
-
     .home-status-bar {
       margin-bottom: 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      color: var(--site-muted);
+      color: #94a3b8;
       font-size: 14px;
     }
     .home-status-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: var(--site-surface);
-      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 6px 16px;
       border-radius: 20px;
-      border: 1px solid var(--site-border);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       font-weight: 500;
     }
     .home-status-badge span {
-      color: var(--site-accent);
+      color: var(--theme-accent);
       font-weight: 700;
     }
 
-    /* 瀑布流容器 */
     .masonry-grid {
       display: flex;
       gap: 22px;
@@ -419,30 +398,27 @@
       gap: 22px;
       min-width: 0;
     }
-
-    /* 首页系列卡片 */
     .home-card {
       position: relative;
-      background: var(--site-surface);
-      border-radius: var(--card-radius);
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-      border: 1px solid var(--site-border);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
       transition: transform 0.4s var(--ease-smooth),
                   box-shadow 0.4s var(--ease-smooth),
                   border-color 0.4s ease;
-      user-select: none;
     }
     .home-card:hover {
       transform: translateY(-8px) scale(1.01);
-      box-shadow: 0 20px 36px -8px rgba(255, 42, 133, 0.2), 0 10px 20px -5px rgba(0, 0, 0, 0.1);
-      border-color: rgba(255, 42, 133, 0.4);
+      box-shadow: 0 24px 45px -8px var(--theme-accent-glow), 0 10px 20px rgba(0, 0, 0, 0.5);
+      border-color: var(--theme-accent);
     }
     .home-card-media {
       position: relative;
       width: 100%;
-      background: #e2e8f0;
+      background: #0f172a;
       overflow: hidden;
     }
     .home-card-img {
@@ -458,9 +434,8 @@
       position: absolute;
       top: 14px;
       right: 14px;
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(15, 23, 42, 0.7);
       backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       color: #ffffff;
       font-size: 12px;
       font-weight: 600;
@@ -469,24 +444,23 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      z-index: 2;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      transition: background 0.3s;
     }
     .home-card:hover .home-card-badge {
-      background: linear-gradient(135deg, #ff2a85 0%, #ff529a 100%);
+      background: var(--theme-accent);
+      color: #000000;
+      font-weight: 700;
     }
     .home-card-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(10, 13, 20, 0.92) 0%, rgba(10, 13, 20, 0.35) 45%, transparent 100%);
+      background: linear-gradient(to top, rgba(10, 13, 20, 0.95) 0%, rgba(10, 13, 20, 0.35) 50%, transparent 100%);
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
       padding: 22px;
       opacity: 0;
       transition: opacity 0.3s ease;
-      z-index: 3;
     }
     .home-card:hover .home-card-overlay {
       opacity: 1;
@@ -495,613 +469,403 @@
       color: #ffffff;
       font-size: 16.5px;
       font-weight: 700;
-      line-height: 1.35;
       margin-bottom: 6px;
       word-break: break-all;
     }
     .home-card-hint {
-      color: #fbcfe8;
+      color: var(--theme-accent);
       font-size: 12px;
       font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* 空状态 */
-    .empty-state {
-      text-align: center;
-      padding: 100px 20px;
-    }
-    .empty-icon {
-      width: 64px;
-      height: 64px;
-      color: var(--site-muted);
-      margin: 0 auto 16px auto;
     }
 
     /* ========================================================
-       6. 视图二：【系列展览详情页】 (huyml.co 风格左右双栏)
+       5. 视图二：【参考图 100% 构图】：系列展览主舞台
        ======================================================== */
-    .series-view-wrapper {
-      width: 100%;
+    .stage-view-wrapper {
+      width: 100vw;
       min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 90px 48px 40px 48px;
       position: relative;
     }
 
-    /* 顶部导航辅助条 (Breadcrumb & Exit) */
-    .series-subbar {
+    /* 主舞台 16:9 构图容器 (左右两大部分) */
+    .stage-container {
       width: 100%;
-      max-width: 1700px;
-      margin: 0 auto;
-      padding: 24px 32px 0 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .series-back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--site-surface);
-      border: 1px solid var(--site-border);
-      color: var(--site-text);
-      padding: 8px 18px;
-      border-radius: 9999px;
-      font-size: 13.5px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      text-decoration: none;
-    }
-    .series-back-btn:hover {
-      border-color: var(--site-accent);
-      color: var(--site-accent);
-      transform: translateX(-3px);
-    }
-    .series-tag-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      font-family: monospace;
-      color: var(--site-tag-text);
-      background: var(--site-tag-bg);
-      padding: 5px 14px;
-      border-radius: 9999px;
-      letter-spacing: 1px;
-    }
-
-    /* 展览主体容器：左右分栏 (huyml.co Grid) */
-    .series-main-grid {
-      width: 100%;
-      max-width: 1700px;
-      margin: 0 auto;
-      padding: 30px 32px 140px 32px;
+      max-width: 1680px;
+      min-height: 720px;
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
-      gap: 70px;
-      align-items: flex-start;
+      gap: 60px;
+      align-items: center;
       position: relative;
     }
 
     /* ----------------------------------------------------
-       左侧区域：纵向滚动错落悬浮队列
+       左侧舞台：阶梯斜向错落层叠卡片 (P1, P2, P3...)
        ---------------------------------------------------- */
-    .series-left-queue {
+    .stage-cards-deck {
+      position: relative;
       width: 100%;
+      height: 720px;
       display: flex;
-      flex-direction: column;
-      gap: 100px; /* 互不重叠，长页面纵向排布 */
-      padding: 30px 20px 80px 20px;
-      position: relative;
+      align-items: flex-start;
+      justify-content: flex-start;
+      perspective: 1200px;
     }
 
-    /* 纵向参考线 (极简高级工程质感) */
-    .series-queue-line {
+    /* 每一个卡片槽位 (P1, P2, P3...) */
+    .deck-card-item {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 50%;
-      width: 1px;
-      background: linear-gradient(to bottom, transparent, var(--site-border) 10%, var(--site-border) 90%, transparent);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* 单张错位作品外壳 */
-    .queue-item-shell {
-      position: relative;
-      width: 100%;
-      max-width: 620px;
-      margin: 0 auto;
-      z-index: 1;
-      perspective: 1000px;
-    }
-
-    /* 作品卡片实体 */
-    .queue-artwork-card {
-      position: relative;
-      border-radius: 24px;
-      overflow: hidden;
-      background: var(--site-surface);
-      border: 1px solid var(--site-border);
-      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.45);
+      border-radius: 18px;
+      overflow: visible !important;
       cursor: pointer;
       user-select: none;
-      /* 核心平滑与弹性拉出 transition */
-      transition: transform 0.65s var(--ease-elastic),
-                  box-shadow 0.5s ease,
-                  border-color 0.4s ease;
-      transform-origin: center center;
-      will-change: transform;
+      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: #111622;
+      transition: all 0.65s var(--ease-elastic);
+      will-change: transform, opacity, filter, top, left;
     }
 
-    /* 交互规则 1：鼠标悬停任意一张图片时，产生拖拽拉出的动态效果 */
-    /* 一部分保留在图片队列内，另一部分向外拽出，弹性缓动 */
-    .queue-item-shell.pull-left .queue-artwork-card:hover {
-      transform: translateX(-72px) rotate(-3.5deg) scale(1.04) !important;
-      box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.65), 0 0 35px -5px var(--site-accent);
-      border-color: var(--site-accent);
-      z-index: 10;
-    }
-    .queue-item-shell.pull-right .queue-artwork-card:hover {
-      transform: translateX(72px) rotate(3.5deg) scale(1.04) !important;
-      box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.65), 0 0 35px -5px var(--site-accent);
-      border-color: var(--site-accent);
-      z-index: 10;
-    }
-
-    .queue-media-box {
+    /* 卡片图片容器 */
+    .deck-card-media {
+      width: 100%;
+      height: 100%;
       position: relative;
-      width: 100%;
       overflow: hidden;
-      background: rgba(0, 0, 0, 0.15);
+      border-radius: 18px;
     }
-    .queue-img {
+    .deck-card-img {
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: cover;
       display: block;
-      transition: transform 0.7s var(--ease-smooth);
+      transition: transform 0.6s var(--ease-smooth);
     }
-    .queue-artwork-card:hover .queue-img {
-      transform: scale(1.03);
+    .deck-card-item:hover .deck-card-img {
+      transform: scale(1.04);
     }
 
-    /* 卡片角标 */
-    .queue-card-meta {
+    /* 卡片顶部的 P1 / P2 / P3 标注文本 (完全还原参考图) */
+    .deck-card-tag {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 24px;
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      color: #ffffff;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: all 0.3s ease;
+      top: -50px;
+      left: 6px;
+      font-size: 40px;
+      font-weight: 800;
+      font-family: Georgia, "Times New Roman", serif;
+      color: #ffffff !important;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.95);
+      pointer-events: none;
+      z-index: 100 !important;
+      letter-spacing: 1.5px;
     }
-    .queue-artwork-card:hover .queue-card-meta {
+
+    /* 核心阶梯错落排布规则 (完全还原参考图：P3 最高在右上，P2 居中，P1 最左下最前最大) */
+    /* 处于当前主位 (P1 - Rank 0) */
+    .deck-card-item.rank-0 {
+      width: 380px;
+      height: 520px;
+      left: 30px;
+      top: 170px;
+      z-index: 30;
       opacity: 1;
-      transform: translateY(0);
+      filter: brightness(1);
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 35px 85px -15px rgba(0, 0, 0, 0.9), 0 0 45px -10px var(--theme-accent-glow);
     }
-    .queue-card-index {
-      font-size: 13px;
-      font-family: monospace;
-      letter-spacing: 1px;
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.18);
-      padding: 3px 10px;
-      border-radius: 9999px;
-      backdrop-filter: blur(6px);
+    .deck-card-item.rank-0:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 45px 95px -15px rgba(0, 0, 0, 0.95), 0 0 55px var(--theme-accent-glow);
     }
-    .queue-card-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--site-tag-text);
-      background: var(--site-tag-bg);
-      padding: 6px 14px;
-      border-radius: 9999px;
-      backdrop-filter: blur(6px);
+
+    /* 处于次级顺位 (P2 - Rank 1) */
+    .deck-card-item.rank-1 {
+      width: 315px;
+      height: 440px;
+      left: 235px;
+      top: 105px;
+      z-index: 20;
+      opacity: 0.92;
+      filter: brightness(0.85);
+      transform: translateZ(-40px);
+    }
+    .deck-card-item.rank-1:hover {
+      opacity: 1;
+      filter: brightness(1);
+      transform: translateY(-8px) translateZ(-30px);
+    }
+
+    /* 处于第三顺位 (P3 - Rank 2) */
+    .deck-card-item.rank-2 {
+      width: 260px;
+      height: 370px;
+      left: 415px;
+      top: 45px;
+      z-index: 10;
+      opacity: 0.8;
+      filter: brightness(0.68);
+      transform: translateZ(-80px);
+    }
+    .deck-card-item.rank-2:hover {
+      opacity: 0.95;
+      filter: brightness(0.85);
+      transform: translateY(-6px) translateZ(-70px);
+    }
+
+    /* 超过 3 张的顺位隐藏在 P3 后方 */
+    .deck-card-item.rank-hidden {
+      width: 200px;
+      height: 290px;
+      left: 480px;
+      top: 10px;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateZ(-160px);
     }
 
     /* ----------------------------------------------------
-       右侧区域：Sticky 图文一一对应联动面板 (huyml.co)
+       右侧图文区：大标题 + 艺术正文 + READ MORE (完全还原参考图)
        ---------------------------------------------------- */
-    .series-right-panel {
-      position: sticky;
-      top: 100px;
+    .stage-info-content {
       display: flex;
       flex-direction: column;
       gap: 32px;
-      padding: 36px;
-      border-radius: 28px;
-      background: var(--site-surface);
-      border: 1px solid var(--site-border);
-      box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.25);
-      transition: all 0.5s ease;
+      padding-left: 20px;
+      position: relative;
+      z-index: 10;
     }
 
-    /* 顶部系列标题区 */
-    .panel-header {
-      border-bottom: 1px solid var(--site-border);
-      padding-bottom: 24px;
-    }
-    .panel-meta-row {
+    /* 主标题：P1:自然之境 / NATURAL WONDER */
+    .stage-title-block {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      font-family: monospace;
-      font-size: 12.5px;
-      color: var(--site-muted);
+      flex-direction: column;
+      gap: 6px;
     }
-    .panel-title {
-      font-size: 28px;
+    .stage-main-title {
+      font-size: 50px;
       font-weight: 800;
-      letter-spacing: -0.8px;
-      line-height: 1.25;
-      color: var(--site-text);
-      margin-bottom: 10px;
+      color: #ffffff;
+      font-family: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
-    .panel-subtitle {
-      font-size: 14px;
-      color: var(--site-muted);
-      line-height: 1.6;
-    }
-
-    /* 滚动进度条 */
-    .panel-progress-box {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .panel-progress-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      font-family: monospace;
-      color: var(--site-muted);
-    }
-    .panel-progress-track {
-      width: 100%;
-      height: 4px;
-      background: rgba(125, 125, 125, 0.15);
-      border-radius: 9999px;
-      overflow: hidden;
-    }
-    .panel-progress-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--site-accent);
-      border-radius: 9999px;
-      transition: width 0.35s ease;
+    .stage-sub-title {
+      font-size: 42px;
+      font-weight: 800;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: 2px;
+      line-height: 1.15;
+      text-transform: uppercase;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
-    /* 当前对应图片介绍卡 (Active Artwork Detail) */
-    .panel-active-card {
+    /* 三段式杂志正文排版 (还原参考图段落) */
+    .stage-paragraphs {
       display: flex;
       flex-direction: column;
-      gap: 18px;
-      padding: 24px;
-      border-radius: 20px;
-      background: rgba(125, 125, 125, 0.05);
-      border: 1px solid var(--site-border);
-      transition: all 0.4s ease;
+      gap: 20px;
+      max-width: 650px;
+      font-size: 14.5px;
+      line-height: 1.85;
+      color: #cbd5e1;
+      text-align: justify;
     }
-    .active-badge-row {
+    .stage-paragraphs p {
+      letter-spacing: 0.3px;
+    }
+
+    /* READ MORE 按钮与右下角网格导线 (完全还原参考图) */
+    .stage-action-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 28px;
+      margin-top: 14px;
     }
-    .active-num-badge {
-      font-size: 12px;
-      font-family: monospace;
-      font-weight: 700;
-      color: var(--site-accent);
-      letter-spacing: 1px;
-    }
-    .active-spec-badge {
-      font-size: 11.5px;
-      font-family: monospace;
-      color: var(--site-muted);
-    }
-
-    .active-work-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--site-text);
-      line-height: 1.35;
-      word-break: break-all;
-    }
-
-    .active-work-desc {
-      font-size: 13.5px;
-      line-height: 1.7;
-      color: var(--site-muted);
-    }
-
-    /* 规格参数网格 */
-    .active-specs-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      padding-top: 10px;
-      border-top: 1px solid var(--site-border);
-    }
-    .spec-cell {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .spec-label {
-      font-size: 11px;
-      color: var(--site-muted);
-      text-transform: uppercase;
-      font-family: monospace;
-    }
-    .spec-val {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--site-text);
-      font-family: monospace;
-    }
-
-    /* 独立详情跳转按钮 (交互规则 2 对应) */
-    .panel-view-btn {
-      width: 100%;
-      height: 46px;
-      border-radius: 9999px;
-      background: var(--site-accent);
-      color: #ffffff;
-      border: none;
-      font-size: 14.5px;
-      font-weight: 700;
+    .stage-read-more-btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      background: none;
+      border: none;
       cursor: pointer;
-      box-shadow: 0 8px 20px -4px var(--site-accent);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: 1.5px;
       transition: all 0.25s ease;
       text-decoration: none;
+      padding: 6px 0;
+      border-bottom: 2px solid transparent;
     }
-    .panel-view-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 14px 28px -4px var(--site-accent);
-      filter: brightness(1.08);
+    .stage-read-more-btn:hover {
+      color: var(--theme-accent);
+      border-bottom-color: var(--theme-accent);
+      transform: translateX(4px);
+    }
+    .stage-read-more-btn svg {
+      transition: transform 0.25s ease;
+    }
+    .stage-read-more-btn:hover svg {
+      transform: translateX(6px);
     }
 
     /* ========================================================
-       7. 视图三：【单图独立详情页】 (Single Artwork View)
-       交互规则 2：点击左侧任意作品图片跳转进入
+       6. 视图三：【单图独立全屏展台】
        ======================================================== */
-    .photo-view-wrapper {
-      width: 100%;
-      min-height: calc(100vh - 64px);
-      padding: 30px 40px 80px 40px;
-      display: flex;
+    .photo-modal-view {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(8, 11, 16, 0.95);
+      backdrop-filter: blur(16px);
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 40px;
+      opacity: 0;
+      transition: opacity 0.35s ease;
     }
-    .photo-stage-container {
+    .photo-modal-view.active {
+      display: flex;
+      opacity: 1;
+    }
+    .photo-stage-wrapper {
       width: 100%;
-      max-width: 1600px;
-      margin: 0 auto;
+      max-width: 1500px;
+      height: 82vh;
       display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 48px;
+      grid-template-columns: 1fr 360px;
+      gap: 40px;
       align-items: center;
     }
-
-    /* 大图展示区 */
-    .photo-hero-box {
-      position: relative;
+    .photo-modal-hero {
       width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--site-surface);
-      border: 1px solid var(--site-border);
-      border-radius: 28px;
-      padding: 24px;
-      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.5);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 20px;
+      overflow: hidden;
     }
-    .photo-hero-img {
+    .photo-modal-img {
       max-width: 100%;
-      max-height: 75vh;
+      max-height: 100%;
       object-fit: contain;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
       cursor: zoom-in;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s;
     }
-    .photo-hero-img.zoomed {
+    .photo-modal-img.zoomed {
       transform: scale(1.45);
       cursor: zoom-out;
     }
-
-    /* 单图右侧侧边栏 */
-    .photo-info-panel {
+    .photo-modal-sidebar {
       display: flex;
       flex-direction: column;
       gap: 24px;
-      padding: 36px;
-      border-radius: 28px;
-      background: var(--site-surface);
-      border: 1px solid var(--site-border);
-      box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.3);
+      padding: 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      backdrop-filter: blur(12px);
     }
-    .photo-back-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .photo-back-series-btn {
+    .photo-sidebar-close {
+      align-self: flex-start;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--site-muted);
+      color: #94a3b8;
+      background: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 14px;
+      border-radius: 9999px;
       cursor: pointer;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .photo-back-series-btn:hover {
-      color: var(--site-accent);
-    }
-    .photo-nav-arrows {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .photo-arrow-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 1px solid var(--site-border);
-      background: rgba(125, 125, 125, 0.08);
-      color: var(--site-text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      font-size: 13px;
       transition: all 0.2s;
     }
-    .photo-arrow-btn:hover:not(:disabled) {
-      border-color: var(--site-accent);
-      color: var(--site-accent);
-      background: var(--site-tag-bg);
-    }
-    .photo-arrow-btn:disabled {
-      opacity: 0.25;
-      cursor: not-allowed;
-    }
-
-    .photo-detail-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--site-text);
-      line-height: 1.3;
-      word-break: break-all;
-    }
-    .photo-detail-desc {
-      font-size: 13.5px;
-      color: var(--site-muted);
-      line-height: 1.7;
-    }
-
-    .photo-download-btn {
-      width: 100%;
-      height: 46px;
-      border-radius: 9999px;
-      background: var(--site-accent);
+    .photo-sidebar-close:hover {
       color: white;
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 0 8px 20px -4px var(--site-accent);
-      transition: all 0.25s ease;
-    }
-    .photo-download-btn:hover {
-      filter: brightness(1.1);
-      transform: translateY(-2px);
+      border-color: var(--theme-accent);
     }
 
-    /* 响应式断点 */
-    @media (max-width: 1100px) {
-      .series-main-grid {
+    /* 响应式调整 */
+    @media (max-width: 1200px) {
+      .stage-container {
         grid-template-columns: 1fr;
         gap: 40px;
       }
-      .series-right-panel {
-        position: relative;
-        top: 0;
+      .stage-cards-deck {
+        height: 520px;
+        justify-content: center;
       }
-      .photo-stage-container {
-        grid-template-columns: 1fr;
-      }
+      .stage-main-title { font-size: 38px; }
+      .stage-sub-title { font-size: 32px; }
     }
     @media (max-width: 768px) {
-      .navbar {
-        padding: 0 16px;
-      }
-      .brand-title {
-        display: none;
-      }
-      .search-wrapper {
-        width: 140px;
-      }
-      .search-wrapper.focused {
-        width: 190px;
-      }
-      .search-shortcut {
-        display: none;
-      }
-      .series-main-grid {
-        padding: 20px 16px 80px 16px;
-      }
-      .queue-item-shell.pull-left .queue-artwork-card:hover,
-      .queue-item-shell.pull-right .queue-artwork-card:hover {
-        transform: translateY(-8px) scale(1.02) !important;
-      }
+      .navbar { padding: 0 16px; }
+      .brand-title { display: none; }
+      .nav-reference-indicator { display: none; }
+      .stage-view-wrapper { padding: 80px 16px 30px 16px; }
+      .deck-card-item.rank-0 { width: 280px; height: 390px; left: 10px; }
+      .deck-card-item.rank-1 { width: 230px; height: 330px; left: 120px; bottom: 70px; }
+      .deck-card-item.rank-2 { display: none; }
+      .stage-main-title { font-size: 32px; }
+      .stage-sub-title { font-size: 26px; }
     }
   </style>
 </head>
 <body>
 
   <!-- ========================================================
-       1. 页面转场幕布 (Curtain Slide Transition)
+       1. 动态全屏背景 Canvas
+       ======================================================== -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- ========================================================
+       2. 页面平滑转场遮罩
        ======================================================== -->
   <div class="transition-curtain" id="transitionCurtain">
-    <div class="curtain-logo">
+    <div class="curtain-text">
       <div class="curtain-spinner"></div>
-      <div id="curtainText">GALLERY EXHIBITION</div>
+      <div id="curtainTitle">GALLERY EXHIBITION</div>
     </div>
   </div>
 
   <!-- ========================================================
-       2. 顶部工具栏 (Navbar)
-       严格保留：主页、搜索、全局音频控制
+       3. 顶部导航栏 (Navbar)
        ======================================================== -->
   <header class="navbar">
     <div class="navbar-container">
       
-      <!-- Logo 品牌区 -->
-      <a class="brand" id="brandBtn" title="返回主页">
+      <!-- 品牌标识 -->
+      <a class="brand" id="brandBtn" title="返回画廊主页">
         <div class="brand-logo-badge">moely</div>
-        <div class="brand-title">
-          <span>画廊</span>
-          <span class="brand-sub">// EXHIBITION</span>
-        </div>
+        <div class="brand-title">画廊</div>
       </a>
 
-      <!-- 导航功能区 (主页 + 搜索 + 全局音频伴奏) -->
+      <!-- 中间功能区：主页 + 搜索 + 音频控制 -->
       <div class="nav-actions">
-        <!-- 🏠 主页入口 -->
         <button class="nav-btn active" id="homeBtn" title="回到图集主页">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
           主页
         </button>
 
-        <!-- 🔍 实时检索 -->
         <div class="search-wrapper" id="searchWrapper">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
             <circle cx="11" cy="11" r="8"/>
@@ -1118,8 +882,7 @@
           <span class="search-shortcut" id="searchShortcut">/</span>
         </div>
 
-        <!-- 🎵 全局环境音频开关 (Web Audio API 原生驱动) -->
-        <button class="audio-pill" id="audioToggleBtn" title="切换系列环境配乐">
+        <button class="audio-pill" id="audioToggleBtn" title="切换系列专属配乐">
           <div class="audio-waveform">
             <div class="audio-bar"></div>
             <div class="audio-bar"></div>
@@ -1130,211 +893,77 @@
         </button>
       </div>
 
+      <!-- 右侧参考图布局指示：首页 页面 一一一 01 / 03 -->
+      <div class="nav-reference-indicator">
+        <span class="nav-link-item active" id="navRefHomeBtn">首页</span>
+        <span class="nav-link-item" id="navRefPageBtn">页面</span>
+        <div class="nav-dash-progress">
+          <span class="nav-dashes">一一一</span>
+          <span class="nav-counter" id="navRefCounter">01 <span>/ 03</span></span>
+        </div>
+      </div>
+
     </div>
   </header>
 
   <!-- ========================================================
-       3. 视图一：主页系列瀑布流 (Home Grid View)
+       4. 视图一：主页系列瀑布流 (Home Grid View)
        ======================================================== -->
   <main class="view-section current" id="viewHome">
-    <!-- 顶部公告通知 -->
-    <div class="notice-bar" id="noticeBar">
-      <span>📢 欢迎来到画廊！点击任意系列卡片，平滑转场进入<b>【系列展览详情页】</b>，感受 huyml.co 风格错落视差与弹性拉拽交互。</span>
-      <button class="notice-close" id="noticeCloseBtn" title="关闭通知">✕</button>
-    </div>
-
     <div class="home-container">
       <div class="home-status-bar">
         <div class="home-status-badge" id="statsBadge">
           正在读取图集...
         </div>
         <div style="font-family: monospace; font-size: 13px;">
-          SCROLL TO EXPLORE ↓
+          EXPLORE EXHIBITIONS ↓
         </div>
       </div>
-
-      <!-- 瀑布流容器 -->
       <div class="masonry-grid" id="masonryGrid"></div>
-
-      <!-- 空搜索提示 -->
-      <div class="empty-state" id="emptyState" style="display: none;">
-        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
-        </svg>
-        <h3 style="font-size: 18px; margin-bottom: 8px;">未找到匹配系列</h3>
-        <p style="color: var(--site-muted); font-size: 14px; margin-bottom: 20px;">请尝试其他文件夹名称关键词</p>
-        <button class="series-back-btn" id="emptyResetBtn">返回全部系列</button>
-      </div>
     </div>
   </main>
 
   <!-- ========================================================
-       4. 视图二：【系列展览详情页】 (Series Exhibition View - huyml.co 风格)
+       5. 视图二：【参考图 100% 构图】：系列展览主舞台
        ======================================================== -->
-  <section class="view-section" id="viewSeries">
-    <div class="series-view-wrapper">
-      
-      <!-- 顶部次级导航条 -->
-      <div class="series-subbar">
-        <button class="series-back-btn" id="seriesBackHomeBtn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-          返回画廊总览
-        </button>
-        <div class="series-tag-badge" id="seriesThemeBadge">
-          THEME // SCENE 01
-        </div>
-      </div>
-
-      <!-- 展览主体双栏 Grid (左侧队列 + 右侧图文联动) -->
-      <div class="series-main-grid">
+  <section class="view-section" id="viewStage">
+    <div class="stage-view-wrapper">
+      <div class="stage-container">
         
-        <!-- 左侧区域：全部作品图片纵向错位轮转滚动队列 -->
-        <div class="series-left-queue" id="seriesLeftQueue">
-          <div class="series-queue-line"></div>
-          <!-- 动态由 JS 注入错落悬浮卡片 -->
+        <!-- 左侧阶梯错落层叠卡片 Deck (P1, P2, P3...) -->
+        <div class="stage-cards-deck" id="stageCardsDeck">
+          <!-- 由 JS 动态渲染 P1, P2, P3... -->
         </div>
 
-        <!-- 右侧区域：对应左侧图片的介绍文本，随滚动联动 -->
-        <div class="series-right-panel" id="seriesRightPanel">
-          
-          <div class="panel-header">
-            <div class="panel-meta-row">
-              <span id="panelSeriesIndex">SERIES // 01</span>
-              <span id="panelArtworkCount">3 WORKS</span>
-            </div>
-            <h1 class="panel-title" id="panelSeriesTitle">系列展览名称</h1>
-            <p class="panel-subtitle" id="panelSeriesDesc">
-              独立主题视觉探索。沉浸式纵向光影长卷，每一幅画作均承载独特的构图美学与精神张力。
+        <!-- 右侧图文区：大标题 + 艺术正文 + READ MORE -->
+        <div class="stage-info-content">
+          <div class="stage-title-block">
+            <div class="stage-main-title" id="stageTitleZh">P1:自然之境 /</div>
+            <div class="stage-sub-title" id="stageTitleEn">NATURAL WONDER</div>
+          </div>
+
+          <!-- 三段式排版文章 -->
+          <div class="stage-paragraphs">
+            <p id="stagePara1">
+              大于自然之境的全世界贵族的其他生活的景色风形，而且直富疑生旋转的景色，感觉是进行属于新枝先的空地。
+            </p>
+            <p id="stagePara2">
+              石一定世界晶的世界旅及推广的全面之央，窥富喜存庄的感来流。凛然风景观度，是持敬范在玩的之上，表现上海有大流的方箱，均为是不旅的愁情，俄言科目的适度。
+            </p>
+            <p id="stagePara3">
+              自然生于轨坑的特造的现感，环境是近地智慧的自流磕境。所以玩中国在观狸，实地忒搭籍数本的摘色，而柱实将亭偿更方式的造感，现境高情出搭配的过程，赏生更之产品的功知。
             </p>
           </div>
 
-          <!-- 滚动进度联动指示器 -->
-          <div class="panel-progress-box">
-            <div class="panel-progress-labels">
-              <span>EXPLORATION PROGRESS</span>
-              <span id="panelProgressText">1 / 3</span>
-            </div>
-            <div class="panel-progress-track">
-              <div class="panel-progress-fill" id="panelProgressFill"></div>
-            </div>
-          </div>
-
-          <!-- 对应左侧当前作品的介绍卡片 (随滚动视差实时切换) -->
-          <div class="panel-active-card">
-            <div class="active-badge-row">
-              <span class="active-num-badge" id="activeWorkIndex">WORK [01] — ACTIVE</span>
-              <span class="active-spec-badge" id="activeWorkFormat">PNG / MASTERPIECE</span>
-            </div>
-            <div class="active-work-name" id="activeWorkTitle">作品名称加载中...</div>
-            <div class="active-work-desc" id="activeWorkDesc">
-              光影的笔触在此刻定格，画面通过高对比度的视觉层次与虚实转换，营造出孤绝而充满力量感的视觉张力。
-            </div>
-            <div class="active-specs-grid">
-              <div class="spec-cell">
-                <span class="spec-label">DIMENSIONS</span>
-                <span class="spec-val" id="specDimensions">1256 × 1672</span>
-              </div>
-              <div class="spec-cell">
-                <span class="spec-label">RATIO</span>
-                <span class="spec-val" id="specRatio">3:4 PORTRAIT</span>
-              </div>
-              <div class="spec-cell">
-                <span class="spec-label">PALETTE</span>
-                <span class="spec-val" id="specPalette">MONO / NEON</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 交互规则 2：点击跳转至该图片的独立详情页 -->
-          <button class="panel-view-btn" id="panelEnterSingleBtn">
-            <span>进入独立单图详情页</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ========================================================
-       5. 视图三：【单图独立详情页】 (Single Artwork View)
-       ======================================================== -->
-  <section class="view-section" id="viewPhoto">
-    <div class="photo-view-wrapper">
-      <div class="photo-stage-container">
-        
-        <!-- 大图沉浸式展示 -->
-        <div class="photo-hero-box">
-          <img src="" alt="" class="photo-hero-img" id="photoHeroImg" title="点击缩放 / 点击查看原图" />
-        </div>
-
-        <!-- 单图详情侧边栏 -->
-        <div class="photo-info-panel">
-          
-          <div class="photo-back-row">
-            <button class="photo-back-series-btn" id="photoBackSeriesBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                <polyline points="15 18 9 12 15 6"/>
+          <div class="stage-action-row">
+            <button class="stage-read-more-btn" id="stageReadMoreBtn">
+              <span>READ MORE</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
               </svg>
-              返回系列展览
             </button>
-            <div class="photo-nav-arrows">
-              <button class="photo-arrow-btn" id="photoPrevBtn" title="上一张 (←)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                  <polyline points="15 18 9 12 15 6"/>
-                </svg>
-              </button>
-              <button class="photo-arrow-btn" id="photoNextBtn" title="下一张 (→)">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            </div>
           </div>
-
-          <div>
-            <div style="font-size: 12px; font-family: monospace; color: var(--site-muted); margin-bottom: 6px;" id="photoIndexLabel">
-              ARTWORK [01 / 03]
-            </div>
-            <h2 class="photo-detail-title" id="photoDetailTitle">作品详细标题</h2>
-          </div>
-
-          <p class="photo-detail-desc" id="photoDetailDesc">
-            该作品展现了精妙的细节刻画，笔触在极简构图与宏大叙事之间形成静谧平衡。
-          </p>
-
-          <div class="active-specs-grid" style="border-top: 1px solid var(--site-border); padding-top: 14px;">
-            <div class="spec-cell">
-              <span class="spec-label">FILE SIZE</span>
-              <span class="spec-val" id="photoFileSize">3.0 MB</span>
-            </div>
-            <div class="spec-cell">
-              <span class="spec-label">RESOLUTION</span>
-              <span class="spec-val" id="photoResolution">1256 × 1672</span>
-            </div>
-            <div class="spec-cell">
-              <span class="spec-label">FORMAT</span>
-              <span class="spec-val" id="photoFormat">PNG</span>
-            </div>
-          </div>
-
-          <a href="#" class="photo-download-btn" id="photoDownloadBtn" download target="_blank">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            下载高清原作
-          </a>
-
         </div>
 
       </div>
@@ -1342,141 +971,405 @@
   </section>
 
   <!-- ========================================================
-       6. 核心前端交互与音频驱动逻辑 (Vanilla ES6)
+       6. 视图三：【单图高清沉浸式全屏展台】
+       ======================================================== -->
+  <div class="photo-modal-view" id="photoModalView">
+    <div class="photo-stage-wrapper">
+      <div class="photo-modal-hero">
+        <img src="" alt="" class="photo-modal-img" id="photoModalImg" title="点击放大 / 还原" />
+      </div>
+      <div class="photo-modal-sidebar">
+        <button class="photo-sidebar-close" id="photoModalCloseBtn">
+          ✕ 关闭返回展览
+        </button>
+        <div>
+          <div style="font-size: 12px; font-family: monospace; color: var(--theme-accent); margin-bottom: 6px;" id="modalPhotoIndex">
+            ARTWORK [01 / 03]
+          </div>
+          <h2 style="font-size: 24px; font-weight: 800; line-height: 1.3;" id="modalPhotoTitle">作品原件标题</h2>
+        </div>
+        <p style="font-size: 13.5px; color: #94a3b8; line-height: 1.7;" id="modalPhotoDesc">
+          超高保真大画幅原作展示。每一处光斑与笔触均经过精确渲染，呈现出丰富的层次感与空间景深。
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
+          <div>
+            <div style="font-size: 11px; color: #64748b; font-family: monospace;">DIMENSIONS</div>
+            <div style="font-size: 13px; font-weight: 600;" id="modalPhotoDims">1256 × 1672</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #64748b; font-family: monospace;">FILE SIZE</div>
+            <div style="font-size: 13px; font-weight: 600;" id="modalPhotoSize">2.9 MB</div>
+          </div>
+        </div>
+        <a href="#" class="nav-btn" style="text-align: center; justify-content: center; background: var(--theme-accent); color: #000; font-weight: 700;" id="modalDownloadBtn" download target="_blank">
+          下载高清原作
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       7. 核心业务逻辑与动态 Canvas 背景引擎 (Vanilla ES6)
        ======================================================== -->
   <script>
     // ----------------------------------------------------
-    // A. 系列独立主题配色库 (每个系列拥有专属主题色彩)
+    // A. 10 大系列专属主题配置 (背景色、发光色、主标题、配乐基频)
     // ----------------------------------------------------
-    const THEME_PALETTES = [
+    const SERIES_THEMES = [
       {
-        name: "墨玄·浮世",
-        bg: "#0c0e12",
-        surface: "#141720",
-        text: "#f8fafc",
-        muted: "#8292a6",
-        accent: "#ff2a85",
-        border: "rgba(255, 255, 255, 0.08)",
-        tagBg: "rgba(255, 42, 133, 0.16)",
-        tagText: "#ff6ba8",
+        id: "nature",
+        titleZh: "自然之境",
+        titleEn: "NATURAL WONDER",
+        bgHex: "#0c121d",
+        bgGrad: "radial-gradient(circle at 70% 30%, #17263c 0%, #080d15 100%)",
+        accentHex: "#4fc3f7",
+        glowRgba: "rgba(79, 195, 247, 0.45)",
+        gridRgba: "rgba(79, 195, 247, 0.22)",
         audioFreq: 55, // A1
+        para1: "大于自然之境的全世界贵族的其他生活的景色风形，而且直富疑生旋转的景色，感觉是进行属于新枝先的空地。",
+        para2: "石一定世界晶的世界旅及推广的全面之央，窥富喜存庄的感来流。凛然风景观度，是持敬范在玩的之上，表现上海有大流的方箱，均为是不旅的愁情，俄言科目的适度。",
+        para3: "自然生于轨坑的特造的现感，环境是近地智慧的自流磕境。所以玩中国在观狸，实地忒搭籍数本的摘色，而柱实将亭偿更方式的造感，现境高情出搭配的过程，赏生更之产品的功知。"
       },
       {
-        name: "烈炎·赤骸",
-        bg: "#10090a",
-        surface: "#1a0e10",
-        text: "#fff1f2",
-        muted: "#a87d85",
-        accent: "#ff4d4f",
-        border: "rgba(255, 77, 79, 0.14)",
-        tagBg: "rgba(255, 77, 79, 0.18)",
-        tagText: "#ff7875",
+        id: "flame",
+        titleZh: "炽炎赤骸",
+        titleEn: "CRIMSON REIGN",
+        bgHex: "#18090a",
+        bgGrad: "radial-gradient(circle at 70% 30%, #2f1013 0%, #100607 100%)",
+        accentHex: "#ff5252",
+        glowRgba: "rgba(255, 82, 82, 0.45)",
+        gridRgba: "rgba(255, 82, 82, 0.22)",
         audioFreq: 65.4, // C2
+        para1: "裂变的地表迸发出极具压迫感的光芒，炽热与灰烬交织成废土纪元的永恒序曲。",
+        para2: "骨骼与烈火在时间的长河中凝固为雕塑，每一道炽热的纹理都是意志与力量的交响。",
+        para3: "在深渊的最深处，火光照亮了前行的阶梯，毁灭之中孕育着不熄的新生。"
       },
       {
-        name: "苍岚·居合",
-        bg: "#070e14",
-        surface: "#0c1722",
-        text: "#f0fdfa",
-        muted: "#68899c",
-        accent: "#00f2fe",
-        border: "rgba(0, 242, 254, 0.14)",
-        tagBg: "rgba(0, 242, 254, 0.16)",
-        tagText: "#38ef7d",
+        id: "cyber",
+        titleZh: "苍岚居合",
+        titleEn: "CYAN HORIZON",
+        bgHex: "#061318",
+        bgGrad: "radial-gradient(circle at 70% 30%, #0d2833 0%, #040d12 100%)",
+        accentHex: "#00e5ff",
+        glowRgba: "rgba(0, 229, 255, 0.45)",
+        gridRgba: "rgba(0, 229, 255, 0.22)",
         audioFreq: 73.4, // D2
+        para1: "电光撕裂夜空的瞬间，刀刃所指之处，留下了绝对零度的纯粹几何轨迹。",
+        para2: "高密度的光纤回路与传统武道精神在此刻碰撞，幽蓝的荧光是夜行者的无声印记。",
+        para3: "速度在静止中达到巅峰，瞬息即逝的锋芒构成了这个系列最令人窒息的视觉定格。"
       },
       {
-        name: "水墨·游龙",
-        bg: "#0e0e11",
-        surface: "#17171d",
-        text: "#fafafa",
-        muted: "#8e8e93",
-        accent: "#ef4444",
-        border: "rgba(255, 255, 255, 0.09)",
-        tagBg: "rgba(239, 68, 68, 0.16)",
-        tagText: "#f87171",
+        id: "ink",
+        titleZh: "水墨游龙",
+        titleEn: "INK DRAGON",
+        bgHex: "#0f0f13",
+        bgGrad: "radial-gradient(circle at 70% 30%, #1f1f26 0%, #0a0a0d 100%)",
+        accentHex: "#f43f5e",
+        glowRgba: "rgba(244, 63, 94, 0.45)",
+        gridRgba: "rgba(244, 63, 94, 0.2)",
         audioFreq: 82.4, // E2
+        para1: "墨色晕染开来，气韵贯通天地，以留白对抗虚空，以浓淡构建万千气象。",
+        para2: "宣纸之上的龙息穿行于虚实之间，古老的东方哲学在现代笔触下重新复苏。",
+        para3: "不着一字而尽得风流，每一次墨痕的起伏，都是心境与画意的高度同频。"
       },
       {
-        name: "绯色·歌姬",
-        bg: "#12080d",
-        surface: "#1d0c15",
-        text: "#fdf2f8",
-        muted: "#9f768b",
-        accent: "#f43f5e",
-        border: "rgba(244, 63, 94, 0.14)",
-        tagBg: "rgba(244, 63, 94, 0.18)",
-        tagText: "#fb7185",
+        id: "scarlet",
+        titleZh: "绯色歌姬",
+        titleEn: "SCARLET GEISHA",
+        bgHex: "#160710",
+        bgGrad: "radial-gradient(circle at 70% 30%, #2c0e20 0%, #0e040a 100%)",
+        accentHex: "#ff4081",
+        glowRgba: "rgba(255, 64, 129, 0.45)",
+        gridRgba: "rgba(255, 64, 129, 0.22)",
         audioFreq: 87.3, // F2
+        para1: "红樱如霞，朱唇轻启，华美衣褶深处隐藏着难以言说的宿命与决绝。",
+        para2: "戏剧性的光线聚焦在面部微澜之上，古典的温婉与锋芒毕露的张力交织并存。",
+        para3: "如梦如幻的帷幕拉开，每一个定格都是一阕哀婉而灿烈的情感史诗。"
       },
       {
-        name: "残阳·麦芒",
-        bg: "#0f0e0c",
-        surface: "#1a1713",
-        text: "#fefce8",
-        muted: "#9c9380",
-        accent: "#f59e0b",
-        border: "rgba(245, 158, 11, 0.14)",
-        tagBg: "rgba(245, 158, 11, 0.18)",
-        tagText: "#fbbf24",
+        id: "golden",
+        titleZh: "残阳麦芒",
+        titleEn: "GOLDEN HARVEST",
+        bgHex: "#141108",
+        bgGrad: "radial-gradient(circle at 70% 30%, #2b2311 0%, #0c0a05 100%)",
+        accentHex: "#ffb300",
+        glowRgba: "rgba(255, 179, 0, 0.45)",
+        gridRgba: "rgba(255, 179, 0, 0.22)",
         audioFreq: 98, // G2
+        para1: "黄昏的金光浸透了整片大地，微风吹拂麦浪，泛起层层温暖而悠远的涟漪。",
+        para2: "白马与少女驻足在时光的尽头，地平线上的余晖将一切凡俗都镀上了神圣的质感。",
+        para3: "在喧嚣落幕的时分，金色的宁静成为心灵最坚实而宽广的避风之所。"
       },
       {
-        name: "幽林·神社",
-        bg: "#060f0b",
-        surface: "#0c1b14",
-        text: "#ecfdf5",
-        muted: "#688d79",
-        accent: "#10b981",
-        border: "rgba(16, 185, 129, 0.14)",
-        tagBg: "rgba(16, 185, 129, 0.18)",
-        tagText: "#34d399",
+        id: "torii",
+        titleZh: "幽林神社",
+        titleEn: "TORII MIST",
+        bgHex: "#07130e",
+        bgGrad: "radial-gradient(circle at 70% 30%, #0f2b1f 0%, #040d09 100%)",
+        accentHex: "#00e676",
+        glowRgba: "rgba(0, 230, 118, 0.45)",
+        gridRgba: "rgba(0, 230, 118, 0.22)",
         audioFreq: 110, // A2
+        para1: "层峦叠嶂的古木之间，朱红色的鸟居隐匿于青岚雾霭中，隔绝了人世凡尘。",
+        para2: "刀客静候在石阶尽头，雨丝穿透竹叶，天地在微风与呼吸中融为一体。",
+        para3: "神圣与杀机仅一线之隔，苍茫的深绿为整个画面注入了无尽的玄机。"
       },
       {
-        name: "羽翼·神域",
-        bg: "#0c0d14",
-        surface: "#141724",
-        text: "#f5f3ff",
-        muted: "#7e84a8",
-        accent: "#8b5cf6",
-        border: "rgba(139, 92, 246, 0.14)",
-        tagBg: "rgba(139, 92, 246, 0.18)",
-        tagText: "#a78bfa",
+        id: "valkyrie",
+        titleZh: "羽翼神域",
+        titleEn: "VALKYRIE WING",
+        bgHex: "#100c19",
+        bgGrad: "radial-gradient(circle at 70% 30%, #231a37 0%, #0a0710 100%)",
+        accentHex: "#b388ff",
+        glowRgba: "rgba(179, 136, 255, 0.45)",
+        gridRgba: "rgba(179, 136, 255, 0.22)",
         audioFreq: 123.5, // B2
+        para1: "光辉灿烂的光翼撕裂云层，神圣的光铸战甲在苍穹之巅绽放出永恒威严。",
+        para2: "超越维度的空灵构图，将神话史诗的宏大格局以极度精细的笔法娓娓道来。",
+        para3: "天际的裂隙透露出远古的真理，每一片落下的羽芒都在诉说着信念的重量。"
       },
       {
-        name: "瓦黛·雨街",
-        bg: "#080c12",
-        surface: "#101724",
-        text: "#f0f9ff",
-        muted: "#6a86a1",
-        accent: "#0284c7",
-        border: "rgba(2, 132, 199, 0.14)",
-        tagBg: "rgba(2, 132, 199, 0.18)",
-        tagText: "#38bdf8",
+        id: "rain",
+        titleZh: "瓦黛雨街",
+        titleEn: "NIGHT RAIN",
+        bgHex: "#091018",
+        bgGrad: "radial-gradient(circle at 70% 30%, #132435 0%, #050a0f 100%)",
+        accentHex: "#40c4ff",
+        glowRgba: "rgba(64, 196, 255, 0.45)",
+        gridRgba: "rgba(64, 196, 255, 0.22)",
         audioFreq: 130.8, // C3
+        para1: "屋檐下的雨滴串成垂帘，青石板路倒映出暖色灯笼与冷雨夜的交错倒影。",
+        para2: "湿润的空气与朦胧的水汽将画面的层次推向极致，静谧中回响着岁月的足音。",
+        para3: "夜色渐深，灯火阑珊处的伫立，化作了这幅画作中永不褪色的温柔守候。"
       },
       {
-        name: "雪野·风斩",
-        bg: "#0b0f14",
-        surface: "#121a24",
-        text: "#f8fafc",
-        muted: "#758c9e",
-        accent: "#38bdf8",
-        border: "rgba(56, 189, 248, 0.14)",
-        tagBg: "rgba(56, 189, 248, 0.18)",
-        tagText: "#7dd3fc",
+        id: "frost",
+        titleZh: "雪野风斩",
+        titleEn: "FROST BLADE",
+        bgHex: "#0a111a",
+        bgGrad: "radial-gradient(circle at 70% 30%, #152538 0%, #060b11 100%)",
+        accentHex: "#80d8ff",
+        glowRgba: "rgba(128, 216, 255, 0.45)",
+        gridRgba: "rgba(128, 216, 255, 0.22)",
         audioFreq: 146.8, // D3
+        para1: "狂风呼啸过芒草丛生的荒原，银发武者与长刀在冷冽严霜中傲然独立。",
+        para2: "极简的冷灰与苍白主宰了视线，然而画面中蕴含的动势却如雷霆般蓄势待发。",
+        para3: "天地苍茫，唯刀意长存，这是一场人与自然、剑与风霜的终极对话。"
       }
     ];
 
-    function getThemeForSeries(seriesIndex) {
-      return THEME_PALETTES[seriesIndex % THEME_PALETTES.length];
+    function getThemeForSeries(index) {
+      return SERIES_THEMES[index % SERIES_THEMES.length];
     }
 
     // ----------------------------------------------------
-    // B. Web Audio API 沉浸式环境音频合成器 (原生无外链)
+    // B. 全屏动态背景 Canvas 引擎 (星尘浮动 + 3D透视网格 + 斜向发光箭头)
+    // ----------------------------------------------------
+    class DynamicBackgroundEngine {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.particles = [];
+        this.theme = SERIES_THEMES[0];
+        this.time = 0;
+        this.mouseX = this.width / 2;
+        this.mouseY = this.height / 2;
+
+        this.initCanvas();
+        this.initParticles();
+        this.bindEvents();
+        this.animate();
+      }
+
+      initCanvas() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width * window.devicePixelRatio;
+        this.canvas.height = this.height * window.devicePixelRatio;
+        this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+
+      initParticles() {
+        this.particles = [];
+        const count = 55;
+        for (let i = 0; i < count; i++) {
+          this.particles.push({
+            x: Math.random() * this.width,
+            y: Math.random() * this.height,
+            size: Math.random() * 2.2 + 0.6,
+            speedX: (Math.random() - 0.5) * 0.4,
+            speedY: (Math.random() - 0.5) * 0.5,
+            opacity: Math.random() * 0.7 + 0.3,
+            pulseSpeed: Math.random() * 0.03 + 0.015,
+            pulsePhase: Math.random() * Math.PI * 2
+          });
+        }
+      }
+
+      setTheme(newTheme) {
+        this.theme = newTheme;
+      }
+
+      bindEvents() {
+        window.addEventListener('resize', () => {
+          this.initCanvas();
+          this.initParticles();
+        });
+        window.addEventListener('mousemove', (e) => {
+          this.mouseX = e.clientX;
+          this.mouseY = e.clientY;
+        });
+      }
+
+      drawPerspectiveGrid() {
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+
+        // 绘制右下角科技艺术透视网格 (参考图中右下角的透视网格)
+        const originX = w * 0.95;
+        const originY = h * 0.62;
+        const gridW = w * 0.45;
+        const gridH = h * 0.38;
+
+        ctx.save();
+        ctx.strokeStyle = this.theme.gridRgba;
+        ctx.lineWidth = 1;
+
+        // 纵深辐射线
+        const rayCount = 10;
+        for (let i = 0; i <= rayCount; i++) {
+          const t = i / rayCount;
+          const startX = originX - gridW * (1 - t * 0.3);
+          const startY = h;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(originX + t * 40, originY);
+          ctx.stroke();
+        }
+
+        // 水平透视线 (间距由密到疏)
+        const horizCount = 7;
+        for (let j = 1; j <= horizCount; j++) {
+          const progress = Math.pow(j / horizCount, 2);
+          const currentY = originY + (h - originY) * progress;
+          const currentXStart = originX - gridW * progress;
+          ctx.beginPath();
+          ctx.moveTo(currentXStart, currentY);
+          ctx.lineTo(w, currentY);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      drawDiagonalLuminousArrow() {
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+
+        // 参考图中的斜向贯穿光束箭头：从画面中心偏右斜向左下射出
+        const startX = w * 0.52;
+        const startY = h * 0.46;
+        const endX = w * 0.08;
+        const endY = h * 0.88;
+
+        ctx.save();
+        // 外部微光晕
+        ctx.strokeStyle = this.theme.glowRgba;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // 内部核心高亮线
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // 左下端发光箭头
+        const arrowAngle = Math.atan2(endY - startY, endX - startX);
+        const headLen = 22;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(arrowAngle - Math.PI / 6), endY - headLen * Math.sin(arrowAngle - Math.PI / 6));
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(arrowAngle + Math.PI / 6), endY - headLen * Math.sin(arrowAngle + Math.PI / 6));
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 箭头端点星芒光晕
+        const pulse = Math.sin(this.time * 2.5) * 6 + 18;
+        const glowGrad = ctx.createRadialGradient(endX, endY, 1, endX, endY, pulse);
+        glowGrad.addColorStop(0, '#ffffff');
+        glowGrad.addColorStop(0.3, this.theme.accentHex);
+        glowGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(endX, endY, pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      drawParticles() {
+        const ctx = this.ctx;
+        const mouseOffsetX = (this.mouseX - this.width / 2) * 0.03;
+        const mouseOffsetY = (this.mouseY - this.height / 2) * 0.03;
+
+        this.particles.forEach(p => {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          if (p.x < 0) p.x = this.width;
+          if (p.x > this.width) p.x = 0;
+          if (p.y < 0) p.y = this.height;
+          if (p.y > this.height) p.y = 0;
+
+          const currentOpacity = p.opacity * (0.6 + 0.4 * Math.sin(this.time * p.pulseSpeed + p.pulsePhase));
+          const posX = p.x + mouseOffsetX;
+          const posY = p.y + mouseOffsetY;
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${currentOpacity})`;
+          ctx.beginPath();
+          ctx.arc(posX, posY, p.size, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 核心亮点外晕
+          if (p.size > 1.6) {
+            ctx.fillStyle = this.theme.glowRgba;
+            ctx.beginPath();
+            ctx.arc(posX, posY, p.size * 2.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+      }
+
+      animate() {
+        this.time += 0.04;
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
+        // 绘制动态透视网格
+        this.drawPerspectiveGrid();
+        // 绘制斜向贯穿光束箭头
+        this.drawDiagonalLuminousArrow();
+        // 绘制浮动星尘粒子
+        this.drawParticles();
+
+        requestAnimationFrame(() => this.animate());
+      }
+    }
+
+    const bgEngine = new DynamicBackgroundEngine('bgCanvas');
+
+    // ----------------------------------------------------
+    // C. Web Audio API 沉浸式环境音频合成器
     // ----------------------------------------------------
     class AmbientAudioEngine {
       constructor() {
@@ -1485,7 +1378,7 @@
         this.isPlaying = false;
         this.currentNodes = [];
         this.baseFreq = 55;
-        this.userMuted = true; // 默认静音，用户开启后记忆
+        this.userMuted = true;
       }
 
       initContext() {
@@ -1507,8 +1400,6 @@
         this.stopCurrent();
 
         const now = this.ctx.currentTime;
-
-        // 1. 低沉主振荡器 (Warm Sine Drone)
         const osc1 = this.ctx.createOscillator();
         const gain1 = this.ctx.createGain();
         osc1.type = 'sine';
@@ -1519,34 +1410,18 @@
         osc1.start();
         this.currentNodes.push(osc1, gain1);
 
-        // 2. 双耳节拍微失谐振荡器 (Binaural Detune)
         const osc2 = this.ctx.createOscillator();
         const gain2 = this.ctx.createGain();
         osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(freq * 1.5 + 0.8, now); // 纯五度微谐波
+        osc2.frequency.setValueAtTime(freq * 1.5 + 0.8, now);
         gain2.gain.setValueAtTime(0.06, now);
         osc2.connect(gain2);
         gain2.connect(this.masterGain);
         osc2.start();
         this.currentNodes.push(osc2, gain2);
 
-        // 3. 缓动环境高频泛音 (LFO Filtered Pad)
-        const osc3 = this.ctx.createOscillator();
-        const filter = this.ctx.createBiquadFilter();
-        const gain3 = this.ctx.createGain();
-        osc3.type = 'sawtooth';
-        osc3.frequency.setValueAtTime(freq * 2, now);
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(320, now);
-        gain3.gain.setValueAtTime(0.04, now);
-        osc3.connect(filter);
-        filter.connect(gain3);
-        gain3.connect(this.masterGain);
-        osc3.start();
-        this.currentNodes.push(osc3, filter, gain3);
-
         if (!this.userMuted) {
-          this.fadeIn(1.5);
+          this.fadeIn(1.2);
           this.isPlaying = true;
         }
       }
@@ -1562,16 +1437,16 @@
         this.currentNodes = [];
       }
 
-      fadeIn(duration = 1.2) {
+      fadeIn(duration = 1.0) {
         if (!this.ctx || this.userMuted) return;
         const now = this.ctx.currentTime;
         this.masterGain.gain.cancelScheduledValues(now);
         this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-        this.masterGain.gain.linearRampToValueAtTime(0.4, now + duration);
+        this.masterGain.gain.linearRampToValueAtTime(0.35, now + duration);
         this.isPlaying = true;
       }
 
-      fadeOut(duration = 1.0) {
+      fadeOut(duration = 0.8) {
         if (!this.ctx) return;
         const now = this.ctx.currentTime;
         this.masterGain.gain.cancelScheduledValues(now);
@@ -1586,11 +1461,8 @@
         if (this.userMuted) {
           this.fadeOut(0.6);
         } else {
-          if (this.currentNodes.length === 0) {
-            this.playTheme(this.baseFreq);
-          } else {
-            this.fadeIn(0.8);
-          }
+          this.playTheme(this.baseFreq);
+          this.fadeIn(0.8);
         }
         return !this.userMuted;
       }
@@ -1599,20 +1471,19 @@
     const audioEngine = new AmbientAudioEngine();
 
     // ----------------------------------------------------
-    // C. 应用全局状态
+    // D. 全局状态
     // ----------------------------------------------------
     let allSeries = [];
     let currentFilter = '';
     let currentSeries = null;
-    let currentArtworkIndex = 0;
-    let currentView = 'home'; // 'home' | 'series' | 'photo'
+    let currentDeckOrder = []; // 存储当前展示卡片的索引顺序，如 [0, 1, 2]
+    let currentView = 'home'; // 'home' | 'stage'
 
     // DOM 元素引用
     const viewHome = document.getElementById('viewHome');
-    const viewSeries = document.getElementById('viewSeries');
-    const viewPhoto = document.getElementById('viewPhoto');
+    const viewStage = document.getElementById('viewStage');
     const transitionCurtain = document.getElementById('transitionCurtain');
-    const curtainText = document.getElementById('curtainText');
+    const curtainTitle = document.getElementById('curtainTitle');
 
     const homeBtn = document.getElementById('homeBtn');
     const brandBtn = document.getElementById('brandBtn');
@@ -1622,164 +1493,85 @@
     const searchWrapper = document.getElementById('searchWrapper');
     const audioToggleBtn = document.getElementById('audioToggleBtn');
     const audioStatusText = document.getElementById('audioStatusText');
+    const navRefHomeBtn = document.getElementById('navRefHomeBtn');
+    const navRefPageBtn = document.getElementById('navRefPageBtn');
+    const navRefCounter = document.getElementById('navRefCounter');
     const statsBadge = document.getElementById('statsBadge');
     const masonryGrid = document.getElementById('masonryGrid');
-    const emptyState = document.getElementById('emptyState');
-    const emptyResetBtn = document.getElementById('emptyResetBtn');
-    const noticeBar = document.getElementById('noticeBar');
-    const noticeCloseBtn = document.getElementById('noticeCloseBtn');
 
-    // 系列展览页 DOM
-    const seriesBackHomeBtn = document.getElementById('seriesBackHomeBtn');
-    const seriesThemeBadge = document.getElementById('seriesThemeBadge');
-    const seriesLeftQueue = document.getElementById('seriesLeftQueue');
-    const panelSeriesIndex = document.getElementById('panelSeriesIndex');
-    const panelArtworkCount = document.getElementById('panelArtworkCount');
-    const panelSeriesTitle = document.getElementById('panelSeriesTitle');
-    const panelSeriesDesc = document.getElementById('panelSeriesDesc');
-    const panelProgressText = document.getElementById('panelProgressText');
-    const panelProgressFill = document.getElementById('panelProgressFill');
-    const activeWorkIndex = document.getElementById('activeWorkIndex');
-    const activeWorkFormat = document.getElementById('activeWorkFormat');
-    const activeWorkTitle = document.getElementById('activeWorkTitle');
-    const activeWorkDesc = document.getElementById('activeWorkDesc');
-    const specDimensions = document.getElementById('specDimensions');
-    const specRatio = document.getElementById('specRatio');
-    const specPalette = document.getElementById('specPalette');
-    const panelEnterSingleBtn = document.getElementById('panelEnterSingleBtn');
+    // 主舞台 DOM
+    const stageCardsDeck = document.getElementById('stageCardsDeck');
+    const stageTitleZh = document.getElementById('stageTitleZh');
+    const stageTitleEn = document.getElementById('stageTitleEn');
+    const stagePara1 = document.getElementById('stagePara1');
+    const stagePara2 = document.getElementById('stagePara2');
+    const stagePara3 = document.getElementById('stagePara3');
+    const stageReadMoreBtn = document.getElementById('stageReadMoreBtn');
 
-    // 单图独立详情页 DOM
-    const photoHeroImg = document.getElementById('photoHeroImg');
-    const photoBackSeriesBtn = document.getElementById('photoBackSeriesBtn');
-    const photoPrevBtn = document.getElementById('photoPrevBtn');
-    const photoNextBtn = document.getElementById('photoNextBtn');
-    const photoIndexLabel = document.getElementById('photoIndexLabel');
-    const photoDetailTitle = document.getElementById('photoDetailTitle');
-    const photoDetailDesc = document.getElementById('photoDetailDesc');
-    const photoFileSize = document.getElementById('photoFileSize');
-    const photoResolution = document.getElementById('photoResolution');
-    const photoFormat = document.getElementById('photoFormat');
-    const photoDownloadBtn = document.getElementById('photoDownloadBtn');
+    // 单图 Modal DOM
+    const photoModalView = document.getElementById('photoModalView');
+    const photoModalImg = document.getElementById('photoModalImg');
+    const photoModalCloseBtn = document.getElementById('photoModalCloseBtn');
+    const modalPhotoIndex = document.getElementById('modalPhotoIndex');
+    const modalPhotoTitle = document.getElementById('modalPhotoTitle');
+    const modalPhotoDesc = document.getElementById('modalPhotoDesc');
+    const modalPhotoDims = document.getElementById('modalPhotoDims');
+    const modalPhotoSize = document.getElementById('modalPhotoSize');
+    const modalDownloadBtn = document.getElementById('modalDownloadBtn');
 
     // ----------------------------------------------------
-    // D. 页面转场动效 (Page Transitions)
+    // E. 页面转场动效 (Curtain Transition)
     // ----------------------------------------------------
-    function triggerCurtainTransition(title, callback) {
-      curtainText.textContent = title || 'GALLERY EXHIBITION';
+    function triggerCurtain(title, callback) {
+      curtainTitle.textContent = title || 'EXHIBITION';
       transitionCurtain.classList.add('active');
-
       setTimeout(() => {
         if (callback) callback();
         window.scrollTo({ top: 0, behavior: 'instant' });
         setTimeout(() => {
           transitionCurtain.classList.remove('active');
-        }, 320);
-      }, 420);
+        }, 280);
+      }, 380);
     }
 
     // ----------------------------------------------------
-    // E. 视图切换逻辑
+    // F. 动态主题切换系统 (背景颜色随系列自动变化)
     // ----------------------------------------------------
-    function switchView(targetView) {
-      currentView = targetView;
-      viewHome.classList.remove('current');
-      viewSeries.classList.remove('current');
-      viewPhoto.classList.remove('current');
-
-      if (targetView === 'home') {
-        document.body.className = '';
-        viewHome.classList.add('current');
-        homeBtn.classList.add('active');
-        // 重置为默认浅色主题变量
-        applyThemeVariables(null);
-        audioEngine.fadeOut(0.8);
-      } else if (targetView === 'series') {
-        document.body.className = 'series-mode';
-        viewSeries.classList.add('current');
-        homeBtn.classList.remove('active');
-      } else if (targetView === 'photo') {
-        document.body.className = 'photo-mode';
-        viewPhoto.classList.add('current');
-        homeBtn.classList.remove('active');
-      }
-    }
-
-    function applyThemeVariables(theme) {
+    function applyTheme(theme) {
       const root = document.documentElement;
-      if (!theme) {
-        root.style.setProperty('--site-bg', '#f8fafc');
-        root.style.setProperty('--site-surface', '#ffffff');
-        root.style.setProperty('--site-text', '#0f172a');
-        root.style.setProperty('--site-muted', '#64748b');
-        root.style.setProperty('--site-accent', '#ff2a85');
-        root.style.setProperty('--site-border', 'rgba(226, 232, 240, 0.8)');
-        root.style.setProperty('--site-tag-bg', 'rgba(255, 42, 133, 0.1)');
-        root.style.setProperty('--site-tag-text', '#ff2a85');
-        root.style.setProperty('--nav-bg', 'rgba(255, 255, 255, 0.88)');
-        return;
-      }
-      root.style.setProperty('--site-bg', theme.bg);
-      root.style.setProperty('--site-surface', theme.surface);
-      root.style.setProperty('--site-text', theme.text);
-      root.style.setProperty('--site-muted', theme.muted);
-      root.style.setProperty('--site-accent', theme.accent);
-      root.style.setProperty('--site-border', theme.border);
-      root.style.setProperty('--site-tag-bg', theme.tagBg);
-      root.style.setProperty('--site-tag-text', theme.tagText);
-      root.style.setProperty('--nav-bg', `${theme.bg}ee`);
+      root.style.setProperty('--theme-bg', theme.bgHex);
+      root.style.setProperty('--theme-accent', theme.accentHex);
+      root.style.setProperty('--theme-accent-glow', theme.glowRgba);
+      root.style.setProperty('--theme-grid-line', theme.gridRgba);
+
+      // 同步 Canvas 动态背景颜色
+      bgEngine.setTheme(theme);
     }
 
     // ----------------------------------------------------
-    // F. 拉取图集数据
+    // G. 数据加载与主页瀑布流渲染
     // ----------------------------------------------------
-    async function fetchSeriesData() {
+    async function initData() {
       try {
-        statsBadge.innerHTML = '正在加载系列图集...';
+        statsBadge.innerHTML = '正在加载图集...';
         const res = await fetch('/api/series');
         const data = await res.json();
         allSeries = data.series || [];
         renderHomeGrid();
-        handleHashRoute();
+        handleHashRouting();
       } catch (err) {
-        console.error('拉取图集失败:', err);
-        statsBadge.innerHTML = '<span style="color:#ef4444;">图集加载失败，请检查服务</span>';
+        console.error(err);
+        statsBadge.innerHTML = '<span style="color:#ef4444;">图集拉取失败，请检查服务</span>';
       }
-    }
-
-    // ----------------------------------------------------
-    // G. 首页瀑布流渲染 (Home Masonry)
-    // ----------------------------------------------------
-    function getColumnCount() {
-      const w = window.innerWidth;
-      if (w >= 1600) return 5;
-      if (w >= 1200) return 4;
-      if (w >= 860) return 3;
-      if (w >= 540) return 2;
-      return 1;
     }
 
     function renderHomeGrid() {
       const filter = currentFilter.trim().toLowerCase();
-      const filtered = allSeries.filter(s => {
-        if (!filter) return true;
-        return s.title.toLowerCase().includes(filter);
-      });
+      const filtered = allSeries.filter(s => !filter || s.title.toLowerCase().includes(filter));
 
-      if (filter) {
-        statsBadge.innerHTML = `搜索结果：共 <span>${filtered.length}</span> 个系列 (全部 ${allSeries.length} 个)`;
-      } else {
-        const totalImgs = allSeries.reduce((acc, cur) => acc + cur.count, 0);
-        statsBadge.innerHTML = `共收录 <span>${allSeries.length}</span> 个系列图集 · <span>${totalImgs}</span> 张写真作品`;
-      }
+      statsBadge.innerHTML = `共收录 <span>${allSeries.length}</span> 个系列图集 · <span>${allSeries.reduce((a,c)=>a+c.count,0)}</span> 张写真作品`;
 
-      if (filtered.length === 0) {
-        masonryGrid.innerHTML = '';
-        emptyState.style.display = 'block';
-        return;
-      }
-      emptyState.style.display = 'none';
-
-      const colCount = getColumnCount();
+      const colCount = window.innerWidth >= 1600 ? 5 : window.innerWidth >= 1200 ? 4 : window.innerWidth >= 860 ? 3 : window.innerWidth >= 540 ? 2 : 1;
       masonryGrid.innerHTML = '';
       const cols = [];
       const colHeights = [];
@@ -1792,75 +1584,43 @@
         colHeights.push(0);
       }
 
-      filtered.forEach((series, index) => {
-        let minIndex = 0;
-        let minHeight = colHeights[0];
+      filtered.forEach((series, idx) => {
+        let minCol = 0;
+        let minH = colHeights[0];
         for (let i = 1; i < colCount; i++) {
-          if (colHeights[i] < minHeight) {
-            minHeight = colHeights[i];
-            minIndex = i;
+          if (colHeights[i] < minH) {
+            minH = colHeights[i];
+            minCol = i;
           }
         }
 
-        const card = createHomeCard(series, index);
-        cols[minIndex].appendChild(card);
+        const card = document.createElement('div');
+        card.className = 'home-card';
+        card.title = `进入系列展览: ${series.title}`;
+        card.innerHTML = `
+          <div class="home-card-media">
+            <div class="home-card-badge">${series.count}P</div>
+            <img class="home-card-img" src="${series.cover_thumb}" alt="${escapeHtml(series.title)}" loading="lazy" />
+            <div class="home-card-overlay">
+              <div class="home-card-title">${escapeHtml(series.title)}</div>
+              <div class="home-card-hint">点击进入系列主展厅 →</div>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          window.location.hash = `#/series/${encodeURIComponent(series.id)}`;
+        });
 
+        cols[minCol].appendChild(card);
         const ratio = series.cover_aspect_ratio || 1.33;
-        colHeights[minIndex] += (300 / ratio) + 20;
+        colHeights[minCol] += (300 / ratio) + 20;
       });
     }
 
-    function createHomeCard(series, seriesIndex) {
-      const card = document.createElement('div');
-      card.className = 'home-card';
-      card.title = `进入系列展览: ${series.title}`;
-
-      const media = document.createElement('div');
-      media.className = 'home-card-media';
-
-      const badge = document.createElement('div');
-      badge.className = 'home-card-badge';
-      badge.innerHTML = `
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
-          <circle cx="9" cy="9" r="2"/>
-          <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-        </svg>
-        ${series.count}P
-      `;
-      media.appendChild(badge);
-
-      const img = document.createElement('img');
-      img.className = 'home-card-img';
-      img.loading = 'lazy';
-      img.alt = series.title;
-      img.src = series.cover_thumb;
-      media.appendChild(img);
-
-      const overlay = document.createElement('div');
-      overlay.className = 'home-card-overlay';
-      overlay.innerHTML = `
-        <div class="home-card-title">${escapeHtml(series.title)}</div>
-        <div class="home-card-hint">
-          点击进入系列展览 →
-        </div>
-      `;
-      media.appendChild(overlay);
-
-      card.appendChild(media);
-
-      // 点击触发转场动画进入【系列展览详情页】
-      card.addEventListener('click', () => {
-        window.location.hash = `#/series/${encodeURIComponent(series.id)}`;
-      });
-
-      return card;
-    }
-
     // ----------------------------------------------------
-    // H. 【系列展览详情页】 构建与交互 (huyml.co 风格)
+    // H. 【参考图 100% 构图】：进入系列展览主舞台
     // ----------------------------------------------------
-    function openSeriesExhibition(seriesId, initialArtworkIdx = 0) {
+    function openSeriesStage(seriesId) {
       const seriesIndex = allSeries.findIndex(s => s.id === seriesId);
       if (seriesIndex === -1) {
         window.location.hash = '#/';
@@ -1870,252 +1630,174 @@
       currentSeries = allSeries[seriesIndex];
       const theme = getThemeForSeries(seriesIndex);
 
-      triggerCurtainTransition(currentSeries.title, () => {
-        switchView('series');
-        applyThemeVariables(theme);
+      triggerCurtain(currentSeries.title, () => {
+        currentView = 'stage';
+        viewHome.classList.remove('current');
+        viewStage.classList.add('current');
+        homeBtn.classList.remove('active');
 
-        // 播放专属环境配乐
+        // 应用系列专属主题色彩与背景
+        applyTheme(theme);
+        // 播放专属背景音乐
         audioEngine.playTheme(theme.audioFreq);
 
-        // 填充右侧系列标题区
-        const padIndex = String(seriesIndex + 1).padStart(2, '0');
-        panelSeriesIndex.textContent = `SERIES // ${padIndex}`;
-        panelArtworkCount.textContent = `${currentSeries.count} WORKS`;
-        panelSeriesTitle.textContent = currentSeries.title;
-        seriesThemeBadge.textContent = `THEME // ${theme.name}`;
+        // 重置卡片队列为 [0, 1, 2, ...]
+        currentDeckOrder = currentSeries.images.map((_, i) => i);
 
-        renderSeriesLeftQueue();
-        updateActiveArtwork(initialArtworkIdx);
+        renderStageDeck();
+        updateStageEditorial(currentDeckOrder[0], theme);
       });
     }
 
-    // 渲染左侧纵向错位轮转滚动队列
-    function renderSeriesLeftQueue() {
-      seriesLeftQueue.innerHTML = '<div class="series-queue-line"></div>';
+    // 渲染左侧阶梯错落层叠卡片阵列 (P1, P2, P3...)
+    function renderStageDeck() {
+      stageCardsDeck.innerHTML = '';
 
-      currentSeries.images.forEach((imgItem, i) => {
-        const shell = document.createElement('div');
-        shell.className = `queue-item-shell ${i % 2 === 0 ? 'pull-left' : 'pull-right'}`;
-        shell.dataset.index = i;
-
-        // 错位排布规则：交替左右错位 + 微小倾斜角度
-        const rotateDeg = (i % 2 === 0 ? -2.2 : 2.5);
-        const shiftX = (i % 2 === 0 ? -28 : 34);
-
+      currentDeckOrder.forEach((imgIndex, rank) => {
+        const imgItem = currentSeries.images[imgIndex];
         const card = document.createElement('div');
-        card.className = 'queue-artwork-card';
-        card.style.transform = `translateX(${shiftX}px) rotate(${rotateDeg}deg)`;
+        
+        let rankClass = 'rank-hidden';
+        if (rank === 0) rankClass = 'rank-0';
+        else if (rank === 1) rankClass = 'rank-1';
+        else if (rank === 2) rankClass = 'rank-2';
 
-        const mediaBox = document.createElement('div');
-        mediaBox.className = 'queue-media-box';
+        card.className = `deck-card-item ${rankClass}`;
+        card.dataset.imgIndex = imgIndex;
+        card.title = `P${rank + 1}: ${imgItem.name}`;
 
-        const img = document.createElement('img');
-        img.className = 'queue-img';
-        img.alt = imgItem.name;
-        img.src = imgItem.url; // 展览页使用超清大图
-        mediaBox.appendChild(img);
-
-        const meta = document.createElement('div');
-        meta.className = 'queue-card-meta';
-        meta.innerHTML = `
-          <span class="queue-card-index">INDEX [0${i + 1}]</span>
-          <span class="queue-card-cta">
-            点击进入独立详情
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </span>
+        card.innerHTML = `
+          <div class="deck-card-tag">P${rank + 1}</div>
+          <div class="deck-card-media">
+            <img class="deck-card-img" src="${imgItem.url}" alt="${imgItem.name}" />
+          </div>
         `;
-        mediaBox.appendChild(meta);
-        card.appendChild(mediaBox);
-        shell.appendChild(card);
 
-        // 交互规则 2：点击左侧任意图片，跳转至该图片的独立详情页面
+        // 交互：如果点击的是 P2 或 P3，平滑轮转至主位 P1！
         card.addEventListener('click', () => {
-          window.location.hash = `#/series/${encodeURIComponent(currentSeries.id)}/${i}`;
-        });
-
-        // 鼠标移入时更新右侧联动面板
-        card.addEventListener('mouseenter', () => {
-          updateActiveArtwork(i);
-        });
-
-        seriesLeftQueue.appendChild(shell);
-      });
-
-      setupScrollSpy();
-    }
-
-    // 随长页面滚动，检测左侧队列中央图片，驱动右侧联动面板与进度条
-    function setupScrollSpy() {
-      const shells = seriesLeftQueue.querySelectorAll('.queue-item-shell');
-
-      window.removeEventListener('scroll', handleQueueScroll);
-      window.addEventListener('scroll', handleQueueScroll, { passive: true });
-
-      function handleQueueScroll() {
-        if (currentView !== 'series') return;
-
-        const viewportCenter = window.innerHeight / 2;
-        let closestIndex = 0;
-        let minDistance = Infinity;
-
-        shells.forEach((shell, idx) => {
-          const rect = shell.getBoundingClientRect();
-          const itemCenter = rect.top + rect.height / 2;
-          const dist = Math.abs(viewportCenter - itemCenter);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestIndex = idx;
+          if (rank === 0) {
+            // 点击主位 P1，直接查看大图
+            openPhotoModal(imgIndex);
+          } else {
+            // 轮转卡片槽位
+            rotateDeckTo(rank);
           }
         });
 
-        updateActiveArtwork(closestIndex);
-      }
+        stageCardsDeck.appendChild(card);
+      });
     }
 
-    function updateActiveArtwork(index) {
-      if (!currentSeries || !currentSeries.images[index]) return;
-      currentArtworkIndex = index;
-      const img = currentSeries.images[index];
+    // 轮转卡片队列
+    function rotateDeckTo(targetRank) {
+      if (targetRank <= 0 || targetRank >= currentDeckOrder.length) return;
+      
+      // 提取选中的项置于顶端
+      const selectedItem = currentDeckOrder.splice(targetRank, 1)[0];
+      currentDeckOrder.unshift(selectedItem);
 
-      // 更新进度
-      const progressPercent = ((index + 1) / currentSeries.count) * 100;
-      panelProgressFill.style.width = `${progressPercent}%`;
-      panelProgressText.textContent = `${index + 1} / ${currentSeries.count}`;
+      renderStageDeck();
+      const theme = getThemeForSeries(allSeries.indexOf(currentSeries));
+      updateStageEditorial(currentDeckOrder[0], theme);
+    }
 
-      // 更新详情内容
-      activeWorkIndex.textContent = `WORK [0${index + 1}] — ACTIVE`;
-      const ext = img.name.split('.').pop().toUpperCase();
-      activeWorkFormat.textContent = `${ext} / EXHIBITION`;
-      activeWorkTitle.textContent = cleanImageTitle(img.name);
+    // 更新右侧标题与杂志段落文本
+    function updateStageEditorial(activeImgIndex, theme) {
+      const activeRank = 0; // 当前主位
+      const totalCount = currentSeries.count;
+      const padNum = String(activeImgIndex + 1).padStart(2, '0');
+      const padTotal = String(totalCount).padStart(2, '0');
 
-      // 规格
-      specDimensions.textContent = `${img.width} × ${img.height}`;
-      specRatio.textContent = img.aspect_ratio > 1 ? '16:9 LANDSCAPE' : '3:4 PORTRAIT';
-      const sizeMb = (img.size / (1024 * 1024)).toFixed(1);
-      specPalette.textContent = `${sizeMb} MB`;
+      // 更新右上角指示：01 / 03
+      navRefCounter.innerHTML = `${padNum} <span>/ ${padTotal}</span>`;
 
-      // 动态生成富有艺术气息的作品解读
-      activeWorkDesc.textContent = generateArtisticDescription(img.name, index);
+      // 更新大标题：P1:自然之境 / NATURAL WONDER
+      stageTitleZh.textContent = `P${activeRank + 1}:${theme.titleZh} /`;
+      stageTitleEn.textContent = theme.titleEn;
 
-      // 绑定右侧按钮点击
-      panelEnterSingleBtn.onclick = () => {
-        window.location.hash = `#/series/${encodeURIComponent(currentSeries.id)}/${index}`;
+      // 更新三段式排版文章
+      stagePara1.textContent = theme.para1;
+      stagePara2.textContent = theme.para2;
+      stagePara3.textContent = theme.para3;
+
+      // 绑定 READ MORE 按钮
+      stageReadMoreBtn.onclick = () => {
+        openPhotoModal(activeImgIndex);
       };
     }
 
     // ----------------------------------------------------
-    // I. 【单图独立详情页】 构建与交互 (Single Artwork View)
+    // I. 单图独立全屏展示 Modal
     // ----------------------------------------------------
-    function openSinglePhoto(seriesId, imageIndex) {
-      const seriesIndex = allSeries.findIndex(s => s.id === seriesId);
-      if (seriesIndex === -1) {
-        window.location.hash = '#/';
-        return;
-      }
-      currentSeries = allSeries[seriesIndex];
-      const idx = parseInt(imageIndex, 10) || 0;
-      const safeIdx = Math.max(0, Math.min(idx, currentSeries.images.length - 1));
-      currentArtworkIndex = safeIdx;
+    function openPhotoModal(imgIndex) {
+      if (!currentSeries || !currentSeries.images[imgIndex]) return;
+      const img = currentSeries.images[imgIndex];
 
-      const theme = getThemeForSeries(seriesIndex);
+      photoModalImg.src = img.url;
+      photoModalImg.classList.remove('zoomed');
 
-      triggerCurtainTransition(`ARTWORK 0${safeIdx + 1}`, () => {
-        switchView('photo');
-        applyThemeVariables(theme);
+      modalPhotoIndex.textContent = `ARTWORK [0${imgIndex + 1} / 0${currentSeries.count}]`;
+      modalPhotoTitle.textContent = img.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+      modalPhotoDims.textContent = `${img.width} × ${img.height}`;
+      modalPhotoSize.textContent = `${(img.size / (1024 * 1024)).toFixed(2)} MB`;
+      modalDownloadBtn.href = img.url;
+      modalDownloadBtn.download = img.name;
 
-        const img = currentSeries.images[safeIdx];
-        photoHeroImg.src = img.url;
-        photoHeroImg.classList.remove('zoomed');
-
-        photoIndexLabel.textContent = `ARTWORK [0${safeIdx + 1} / 0${currentSeries.count}]`;
-        photoDetailTitle.textContent = cleanImageTitle(img.name);
-        photoDetailDesc.textContent = generateArtisticDescription(img.name, safeIdx);
-
-        photoResolution.textContent = `${img.width} × ${img.height}`;
-        photoFileSize.textContent = `${(img.size / (1024 * 1024)).toFixed(2)} MB`;
-        photoFormat.textContent = img.name.split('.').pop().toUpperCase();
-
-        photoDownloadBtn.href = img.url;
-        photoDownloadBtn.download = img.name;
-
-        photoPrevBtn.disabled = (safeIdx === 0);
-        photoNextBtn.disabled = (safeIdx === currentSeries.images.length - 1);
-
-        photoPrevBtn.onclick = () => {
-          if (safeIdx > 0) {
-            window.location.hash = `#/series/${encodeURIComponent(currentSeries.id)}/${safeIdx - 1}`;
-          }
-        };
-        photoNextBtn.onclick = () => {
-          if (safeIdx < currentSeries.images.length - 1) {
-            window.location.hash = `#/series/${encodeURIComponent(currentSeries.id)}/${safeIdx + 1}`;
-          }
-        };
-
-        photoBackSeriesBtn.onclick = () => {
-          window.location.hash = `#/series/${encodeURIComponent(currentSeries.id)}`;
-        };
-      });
+      photoModalView.classList.add('active');
     }
+
+    function closePhotoModal() {
+      photoModalView.classList.remove('active');
+      photoModalImg.src = '';
+    }
+
+    photoModalCloseBtn.addEventListener('click', closePhotoModal);
+    photoModalImg.addEventListener('click', () => {
+      photoModalImg.classList.toggle('zoomed');
+    });
 
     // ----------------------------------------------------
     // J. 路由分发器 (Hash Routing)
     // ----------------------------------------------------
-    function handleHashRoute() {
+    function handleHashRouting() {
       const hash = window.location.hash || '#/';
       const parts = hash.replace(/^#\/?/, '').split('/');
 
       if (parts[0] === 'series' && parts[1]) {
         const seriesId = decodeURIComponent(parts[1]);
-        if (parts[2] !== undefined) {
-          // 单图详情页
-          openSinglePhoto(seriesId, parts[2]);
-        } else {
-          // 系列展览页
-          openSeriesExhibition(seriesId, 0);
-        }
+        openSeriesStage(seriesId);
       } else {
-        // 主页
         if (currentView !== 'home') {
-          triggerCurtainTransition('GALLERY OVERVIEW', () => {
-            switchView('home');
-            renderHomeGrid();
+          triggerCurtain('GALLERY OVERVIEW', () => {
+            currentView = 'home';
+            viewStage.classList.remove('current');
+            viewHome.classList.add('current');
+            homeBtn.classList.add('active');
+            applyTheme(SERIES_THEMES[0]);
+            audioEngine.fadeOut(0.8);
           });
         }
       }
     }
 
-    window.addEventListener('hashchange', handleHashRoute);
+    window.addEventListener('hashchange', handleHashRouting);
 
     // ----------------------------------------------------
-    // K. 交互事件绑定
+    // K. 交互事件
     // ----------------------------------------------------
-    // 主页按钮
-    homeBtn.addEventListener('click', () => {
+    function goHome() {
       window.location.hash = '#/';
       searchInput.value = '';
       currentFilter = '';
       searchClearBtn.classList.remove('visible');
       searchShortcut.style.display = 'block';
       renderHomeGrid();
-    });
-    brandBtn.addEventListener('click', () => {
-      window.location.hash = '#/';
-    });
-    emptyResetBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      currentFilter = '';
-      searchClearBtn.classList.remove('visible');
-      searchShortcut.style.display = 'block';
-      renderHomeGrid();
-    });
-    seriesBackHomeBtn.addEventListener('click', () => {
-      window.location.hash = '#/';
-    });
+    }
+    homeBtn.addEventListener('click', goHome);
+    brandBtn.addEventListener('click', goHome);
+    navRefHomeBtn.addEventListener('click', goHome);
+    navRefPageBtn.addEventListener('click', goHome);
 
-    // 搜索实时联动
     searchInput.addEventListener('input', (e) => {
       currentFilter = e.target.value;
       if (currentFilter.length > 0) {
@@ -2126,7 +1808,7 @@
         searchShortcut.style.display = 'block';
       }
       if (currentView !== 'home') {
-        switchView('home');
+        window.location.hash = '#/';
       }
       renderHomeGrid();
     });
@@ -2136,9 +1818,7 @@
     });
     searchInput.addEventListener('blur', () => {
       searchWrapper.classList.remove('focused');
-      if (!searchInput.value) {
-        searchShortcut.style.display = 'block';
-      }
+      if (!searchInput.value) searchShortcut.style.display = 'block';
     });
     searchClearBtn.addEventListener('click', () => {
       searchInput.value = '';
@@ -2149,7 +1829,6 @@
       renderHomeGrid();
     });
 
-    // 全局音频开关切换
     audioToggleBtn.addEventListener('click', () => {
       const isPlaying = audioEngine.toggle();
       if (isPlaying) {
@@ -2161,34 +1840,22 @@
       }
     });
 
-    // 单图点击放大
-    photoHeroImg.addEventListener('click', () => {
-      photoHeroImg.classList.toggle('zoomed');
-    });
-
-    // 通知栏关闭
-    noticeCloseBtn.addEventListener('click', () => {
-      noticeBar.style.display = 'none';
-    });
-
-    // 全局键盘快捷键
+    // 键盘快捷键 (左右箭头轮转卡片，Esc返回)
     window.addEventListener('keydown', (e) => {
-      if (currentView === 'photo') {
-        if (e.key === 'ArrowLeft' && !photoPrevBtn.disabled) {
-          photoPrevBtn.click();
-        } else if (e.key === 'ArrowRight' && !photoNextBtn.disabled) {
-          photoNextBtn.click();
+      if (photoModalView.classList.contains('active')) {
+        if (e.key === 'Escape') closePhotoModal();
+        return;
+      }
+      if (currentView === 'stage') {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          rotateDeckTo(1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          rotateDeckTo(currentDeckOrder.length - 1);
         } else if (e.key === 'Escape') {
-          photoBackSeriesBtn.click();
+          goHome();
         }
         return;
       }
-
-      if (currentView === 'series' && e.key === 'Escape') {
-        seriesBackHomeBtn.click();
-        return;
-      }
-
       if ((e.key === '/' || (e.ctrlKey && e.key === 'k')) && document.activeElement !== searchInput) {
         e.preventDefault();
         searchInput.focus();
@@ -2198,51 +1865,28 @@
       }
     });
 
-    // 窗口尺寸自适应
-    let resizeTimer = null;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        if (currentView === 'home') renderHomeGrid();
-      }, 150);
-    });
+    // 滚轮在舞台卡片上平滑轮转
+    stageCardsDeck.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.deltaY > 0) {
+        rotateDeckTo(1);
+      } else if (e.deltaY < 0) {
+        rotateDeckTo(currentDeckOrder.length - 1);
+      }
+    }, { passive: false });
 
-    // 辅助格式化函数
     function escapeHtml(str) {
-      return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      }[tag] || tag));
+      return str.replace(/[&<>'"]/g, t => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[t] || t));
     }
 
-    function cleanImageTitle(name) {
-      return name
-        .replace(/\.[^/.]+$/, "")
-        .replace(/^[0-9_-]+/, "")
-        .replace(/_/g, " ")
-        .trim() || name;
-    }
-
-    function generateArtisticDescription(filename, index) {
-      const DESCS = [
-        "构图以极简凝练的负空间衬托主体动态，笔触在锋芒与幽微之间舒展，光影交错间彰显出超越现实的戏剧张力。",
-        "色彩在深暗底蕴中撕裂出夺目的对比，细微的光粒如星尘般散落，勾勒出静穆而决绝的情绪边界。",
-        "画面采用错位对角线结构，空间透视深邃而从容，细节处理极富质感，呈现出一种沉敛而富有穿透力的视觉共鸣。"
-      ];
-      return DESCS[index % DESCS.length];
-    }
-
-    // 首次页面任意点击无感解锁音频权限
     document.addEventListener('click', function unlockAudio() {
       audioEngine.initContext();
       document.removeEventListener('click', unlockAudio);
     }, { once: true });
 
-    // 启动初始拉取
-    fetchSeriesData();
+    initData();
   </script>
 </body>
 </html>
