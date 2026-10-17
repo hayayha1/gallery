@@ -299,43 +299,92 @@
     }
 
     /* ========================================================
-       3. 页面转场遮罩 (Curtain Transition)
+       3. 方案一：【连续空间穿梭 · 卡片 3D 升空蜕变】 (Spatial Morph & Zoom)
        ======================================================== */
+    /* 飞行代理卡片：从主页卡片无缝飞升形变至 3D 展台主角 */
+    .morph-flight-proxy {
+      position: fixed;
+      z-index: 99999;
+      pointer-events: none;
+      overflow: hidden;
+      background: #0d121c;
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.85), 0 0 35px var(--theme-accent-glow, rgba(56, 189, 248, 0.4));
+      transform-style: preserve-3d;
+      will-change: left, top, width, height, transform, border-radius, box-shadow;
+      transition: left 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+                  top 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+                  width 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+                  height 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-radius 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.82s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.82s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .morph-flight-proxy img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .morph-flight-glare {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 65%);
+      pointer-events: none;
+      mix-blend-mode: overlay;
+    }
+
+    /* 主页其他卡片在卡片升空时的景深退后虚化 */
+    .home-card.receding {
+      transform: scale(0.94) translateY(12px) !important;
+      opacity: 0.25 !important;
+      filter: blur(4px) brightness(0.5) !important;
+      pointer-events: none !important;
+      transition: all 0.6s var(--ease-smooth) !important;
+    }
+
+    /* 优雅浮动 HUD 提示，配合渐变流光 */
     .transition-curtain {
       position: fixed;
-      inset: 0;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
       z-index: 9999;
-      background: #090c12;
+      pointer-events: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      pointer-events: none;
       opacity: 0;
-      transform: translateY(100%);
-      transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.3s;
+      transition: opacity 0.3s ease, transform 0.4s var(--ease-smooth);
     }
     .transition-curtain.active {
-      pointer-events: auto;
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(-50%) translateY(0);
     }
     .curtain-text {
       color: #ffffff;
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: 3px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 10px 24px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 20px var(--theme-accent-glow);
     }
     .curtain-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid rgba(255, 255, 255, 0.15);
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
       border-top-color: var(--theme-accent);
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -479,55 +528,80 @@
     }
 
     /* ========================================================
-       5. 视图二：【参考图 100% 构图】：系列展览主舞台
+       5. 视图二：【HuyML 风格 3D 轮转展台】：60% 图片队列 + 40% 联动图文
        ======================================================== */
     .stage-view-wrapper {
       width: 100vw;
-      min-height: 100vh;
+      height: 100vh;
+      position: relative;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 90px 48px 40px 48px;
-      position: relative;
+      justify-content: space-between;
+      padding: 70px 48px 30px 48px;
+      overflow: hidden;
     }
 
-    /* 主舞台 16:9 构图容器 (左右两大部分) */
-    .stage-container {
+    /* 左侧 60% 宽度：3D 透视流动流视口 (超过中线达到 60%) */
+    .stage-stream-area {
+      position: relative;
+      width: 60%;
+      height: 100%;
+      perspective: 1400px;
+      perspective-origin: 50% 55%;
+      overflow: visible;
+      cursor: grab;
+      user-select: none;
+      z-index: 5;
+    }
+    .stage-stream-area:active {
+      cursor: grabbing;
+    }
+
+    .stage-3d-deck {
+      position: relative;
       width: 100%;
-      max-width: 1680px;
-      min-height: 720px;
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 60px;
-      align-items: center;
-      position: relative;
+      height: 100%;
+      transform-style: preserve-3d;
     }
 
-    /* ----------------------------------------------------
-       左侧舞台：阶梯斜向错落层叠卡片 (P1, P2, P3...)
-       ---------------------------------------------------- */
-    .stage-cards-deck {
-      position: relative;
-      width: 100%;
-      height: 720px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: flex-start;
-      perspective: 1200px;
-    }
-
-    /* 每一个卡片槽位 (P1, P2, P3...) */
+    /* 每一个 3D 卡片槽位 */
     .deck-card-item {
       position: absolute;
+      width: 360px;
+      height: 510px;
       border-radius: 18px;
-      overflow: visible !important;
       cursor: pointer;
+      transform-style: preserve-3d;
+      will-change: transform, opacity, filter, box-shadow;
+      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+      background: #0d121c;
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85);
       user-select: none;
-      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: #111622;
-      transition: all 0.65s var(--ease-elastic);
-      will-change: transform, opacity, filter, top, left;
+    }
+
+    .deck-card-item.is-active {
+      border-color: rgba(255, 255, 255, 0.75);
+      box-shadow: 0 35px 85px -10px rgba(0, 0, 0, 0.95), 0 0 45px var(--theme-accent-glow);
+    }
+
+    .deck-card-item:hover {
+      border-color: var(--theme-accent);
+    }
+
+    /* 卡片顶部的 P1 / P2 / P3 标注文本 */
+    .deck-card-tag {
+      position: absolute;
+      top: -50px;
+      left: 4px;
+      font-size: 40px;
+      font-weight: 800;
+      font-family: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
+      color: #ffffff !important;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.95);
+      pointer-events: none;
+      z-index: 10 !important;
+      letter-spacing: 1px;
     }
 
     /* 卡片图片容器 */
@@ -536,118 +610,70 @@
       height: 100%;
       position: relative;
       overflow: hidden;
-      border-radius: 18px;
+      border-radius: 16px;
     }
     .deck-card-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.6s var(--ease-smooth);
-    }
-    .deck-card-item:hover .deck-card-img {
-      transform: scale(1.04);
+      pointer-events: none;
     }
 
-    /* 卡片顶部的 P1 / P2 / P3 标注文本 (完全还原参考图) */
-    .deck-card-tag {
+    /* 滚动交互提示徽章 */
+    .stage-scroll-badge {
       position: absolute;
-      top: -50px;
-      left: 6px;
-      font-size: 40px;
-      font-weight: 800;
-      font-family: Georgia, "Times New Roman", serif;
-      color: #ffffff !important;
-      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.95);
+      bottom: 24px;
+      left: 24px;
+      padding: 7px 16px;
+      border-radius: 9999px;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(10px);
+      color: var(--theme-accent);
+      font-size: 12px;
+      font-family: monospace;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       pointer-events: none;
-      z-index: 100 !important;
-      letter-spacing: 1.5px;
-    }
-
-    /* 核心阶梯错落排布规则 (完全还原参考图：P3 最高在右上，P2 居中，P1 最左下最前最大) */
-    /* 处于当前主位 (P1 - Rank 0) */
-    .deck-card-item.rank-0 {
-      width: 380px;
-      height: 520px;
-      left: 30px;
-      top: 170px;
-      z-index: 30;
-      opacity: 1;
-      filter: brightness(1);
-      border-color: rgba(255, 255, 255, 0.3);
-      box-shadow: 0 35px 85px -15px rgba(0, 0, 0, 0.9), 0 0 45px -10px var(--theme-accent-glow);
-    }
-    .deck-card-item.rank-0:hover {
-      transform: translateY(-10px) scale(1.02);
-      box-shadow: 0 45px 95px -15px rgba(0, 0, 0, 0.95), 0 0 55px var(--theme-accent-glow);
-    }
-
-    /* 处于次级顺位 (P2 - Rank 1) */
-    .deck-card-item.rank-1 {
-      width: 315px;
-      height: 440px;
-      left: 235px;
-      top: 105px;
       z-index: 20;
-      opacity: 0.92;
-      filter: brightness(0.85);
-      transform: translateZ(-40px);
+      animation: pulseScrollBadge 2.4s infinite;
     }
-    .deck-card-item.rank-1:hover {
-      opacity: 1;
-      filter: brightness(1);
-      transform: translateY(-8px) translateZ(-30px);
-    }
-
-    /* 处于第三顺位 (P3 - Rank 2) */
-    .deck-card-item.rank-2 {
-      width: 260px;
-      height: 370px;
-      left: 415px;
-      top: 45px;
-      z-index: 10;
-      opacity: 0.8;
-      filter: brightness(0.68);
-      transform: translateZ(-80px);
-    }
-    .deck-card-item.rank-2:hover {
-      opacity: 0.95;
-      filter: brightness(0.85);
-      transform: translateY(-6px) translateZ(-70px);
-    }
-
-    /* 超过 3 张的顺位隐藏在 P3 后方 */
-    .deck-card-item.rank-hidden {
-      width: 200px;
-      height: 290px;
-      left: 480px;
-      top: 10px;
-      z-index: 5;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateZ(-160px);
+    @keyframes pulseScrollBadge {
+      0%, 100% { opacity: 0.75; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-4px); }
     }
 
     /* ----------------------------------------------------
-       右侧图文区：大标题 + 艺术正文 + READ MORE (完全还原参考图)
+       右侧 40% 宽度：图文联动展示区 (删去 SERIES INDEX，提升高级留白)
        ---------------------------------------------------- */
     .stage-info-content {
+      width: 40%;
+      max-width: 620px;
       display: flex;
       flex-direction: column;
-      gap: 32px;
-      padding-left: 20px;
+      gap: 28px;
+      padding-left: 40px;
+      padding-right: 20px;
       position: relative;
       z-index: 10;
+      transition: opacity 0.22s ease, transform 0.22s ease;
     }
 
-    /* 主标题：P1:自然之境 / NATURAL WONDER */
+    .stage-info-content.updating {
+      opacity: 0.15;
+      transform: translateY(6px);
+    }
+
+    /* 主标题：P1:倾国 / FATAL BEAUTY */
     .stage-title-block {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
     .stage-main-title {
-      font-size: 50px;
+      font-size: 52px;
       font-weight: 800;
       color: #ffffff;
       font-family: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
@@ -656,7 +682,7 @@
       text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
     .stage-sub-title {
-      font-size: 42px;
+      font-size: 40px;
       font-weight: 800;
       color: #ffffff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -666,13 +692,12 @@
       text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
-    /* 三段式杂志正文排版 (还原参考图段落) */
+    /* 杂志正文段落排版 (来自 description 文件) */
     .stage-paragraphs {
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      max-width: 650px;
-      font-size: 14.5px;
+      gap: 16px;
+      font-size: 15px;
       line-height: 1.85;
       color: #cbd5e1;
       text-align: justify;
@@ -681,12 +706,12 @@
       letter-spacing: 0.3px;
     }
 
-    /* READ MORE 按钮与右下角网格导线 (完全还原参考图) */
+    /* READ MORE 按钮 */
     .stage-action-row {
       display: flex;
       align-items: center;
       gap: 28px;
-      margin-top: 14px;
+      margin-top: 10px;
     }
     .stage-read-more-btn {
       display: inline-flex;
@@ -924,49 +949,46 @@
   </main>
 
   <!-- ========================================================
-       5. 视图二：【参考图 100% 构图】：系列展览主舞台
+       5. 视图二：【HuyML 风格 3D 轮转展台】：60% 图片队列 + 40% 联动图文
        ======================================================== -->
   <section class="view-section" id="viewStage">
     <div class="stage-view-wrapper">
-      <div class="stage-container">
-        
-        <!-- 左侧阶梯错落层叠卡片 Deck (P1, P2, P3...) -->
-        <div class="stage-cards-deck" id="stageCardsDeck">
-          <!-- 由 JS 动态渲染 P1, P2, P3... -->
+      
+      <!-- 左侧 60% 宽度：3D 透视流动队列与斜向能量导轨 -->
+      <div class="stage-stream-area" id="stageStreamArea">
+        <div class="stage-3d-deck" id="stageCardsDeck">
+          <!-- 卡片由 3D 物理引擎实时驱动渲染 -->
         </div>
-
-        <!-- 右侧图文区：大标题 + 艺术正文 + READ MORE -->
-        <div class="stage-info-content">
-          <div class="stage-title-block">
-            <div class="stage-main-title" id="stageTitleZh">P1:自然之境 /</div>
-            <div class="stage-sub-title" id="stageTitleEn">NATURAL WONDER</div>
-          </div>
-
-          <!-- 三段式排版文章 -->
-          <div class="stage-paragraphs">
-            <p id="stagePara1">
-              大于自然之境的全世界贵族的其他生活的景色风形，而且直富疑生旋转的景色，感觉是进行属于新枝先的空地。
-            </p>
-            <p id="stagePara2">
-              石一定世界晶的世界旅及推广的全面之央，窥富喜存庄的感来流。凛然风景观度，是持敬范在玩的之上，表现上海有大流的方箱，均为是不旅的愁情，俄言科目的适度。
-            </p>
-            <p id="stagePara3">
-              自然生于轨坑的特造的现感，环境是近地智慧的自流磕境。所以玩中国在观狸，实地忒搭籍数本的摘色，而柱实将亭偿更方式的造感，现境高情出搭配的过程，赏生更之产品的功知。
-            </p>
-          </div>
-
-          <div class="stage-action-row">
-            <button class="stage-read-more-btn" id="stageReadMoreBtn">
-              <span>READ MORE</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
-            </button>
-          </div>
+        <!-- 滚动交互提示徽章 -->
+        <div class="stage-scroll-badge">
+          <span style="font-size: 14px;">↓</span> 滚轮滑动 / 拖拽 · 3D无限循环流转
         </div>
-
       </div>
+
+      <!-- 右侧 40% 宽度：图文联动展示区 (图文一一对应，彻底删去 SERIES INDEX) -->
+      <div class="stage-info-content" id="stageInfoContent">
+        <div class="stage-title-block">
+          <div class="stage-main-title" id="stageTitleZh">P1:倾国 /</div>
+          <div class="stage-sub-title" id="stageTitleEn">FATAL BEAUTY</div>
+        </div>
+
+        <!-- 对应图片的详细描述段落 -->
+        <div class="stage-paragraphs" id="stageParagraphs">
+          <p id="stagePara1"></p>
+          <p id="stagePara2"></p>
+        </div>
+
+        <div class="stage-action-row">
+          <button class="stage-read-more-btn" id="stageReadMoreBtn">
+            <span>READ MORE</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -1270,16 +1292,16 @@
         const w = this.width;
         const h = this.height;
 
-        // 参考图中的斜向贯穿光束箭头：从画面中心偏右斜向左下射出
-        const startX = w * 0.52;
-        const startY = h * 0.46;
-        const endX = w * 0.08;
-        const endY = h * 0.88;
+        // 根据用户构图手绘草图：斜向贯穿光束箭头贯穿整个卡片队列中心，延伸至 60% 位置
+        const startX = w * 0.58;
+        const startY = h * 0.16;
+        const endX = w * 0.03;
+        const endY = h * 0.94;
 
         ctx.save();
         // 外部微光晕
         ctx.strokeStyle = this.theme.glowRgba;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
@@ -1287,11 +1309,20 @@
 
         // 内部核心高亮线
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.lineTo(endX, endY);
         ctx.stroke();
+
+        // 沿轨道滑动的发光能量粒子 (视觉引导流动方向)
+        const trackT = (this.time * 0.25) % 1.0;
+        const beamPx = startX + (endX - startX) * trackT;
+        const beamPy = startY + (endY - startY) * trackT;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(beamPx, beamPy, 3.5, 0, Math.PI * 2);
+        ctx.fill();
 
         // 左下端发光箭头
         const arrowAngle = Math.atan2(endY - startY, endX - startX);
@@ -1520,18 +1551,298 @@
     const modalDownloadBtn = document.getElementById('modalDownloadBtn');
 
     // ----------------------------------------------------
-    // E. 页面转场动效 (Curtain Transition)
+    // E. 方案一：【连续空间穿梭 · 卡片 3D 升空蜕变】 (Spatial Morph & Zoom)
     // ----------------------------------------------------
-    function triggerCurtain(title, callback) {
-      curtainTitle.textContent = title || 'EXHIBITION';
-      transitionCurtain.classList.add('active');
-      setTimeout(() => {
+    let lastClickedCard = null;
+    let isTransitioning = false;
+
+    function triggerCurtain(title, callback, direction) {
+      const isEnteringStage = currentView === 'home';
+      const isBackward = direction === 'up' || (!isEnteringStage && direction !== 'down');
+
+      if (isBackward) {
+        triggerSpatialMorphBackward(callback);
+      } else {
+        triggerSpatialMorphForward(callback);
+      }
+    }
+
+    // 前进：点击主页卡片 -> 卡片 3D 升空蜕变至 3D 展台主角
+    function triggerSpatialMorphForward(callback) {
+      if (isTransitioning) {
         if (callback) callback();
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        setTimeout(() => {
-          transitionCurtain.classList.remove('active');
-        }, 280);
-      }, 380);
+        return;
+      }
+      isTransitioning = true;
+
+      // 1. 定位源卡片
+      let sourceCard = lastClickedCard;
+      if (!sourceCard || !document.body.contains(sourceCard)) {
+        if (currentSeries) {
+          sourceCard = document.querySelector(`.home-card[data-id="${currentSeries.id}"]`);
+        }
+      }
+
+      // 降级兜底切换
+      if (!sourceCard) {
+        viewHome.classList.remove('current');
+        viewStage.classList.add('current');
+        if (callback) callback();
+        isTransitioning = false;
+        return;
+      }
+
+      const startRect = sourceCard.getBoundingClientRect();
+      const imgEl = sourceCard.querySelector('.home-card-img');
+      const imgSrc = imgEl ? imgEl.src : (currentSeries ? currentSeries.cover_thumb : '');
+
+      // 2. 主页其他卡片优雅退后景深虚化，源卡片占位隐形
+      document.querySelectorAll('.home-card').forEach(c => {
+        if (c !== sourceCard) {
+          c.classList.add('receding');
+        }
+      });
+      sourceCard.style.opacity = '0';
+
+      // 3. 创建 3D 飞行代理卡片 (Morph Hero Proxy)
+      const proxy = document.createElement('div');
+      proxy.className = 'morph-flight-proxy';
+      proxy.style.left = `${startRect.left}px`;
+      proxy.style.top = `${startRect.top}px`;
+      proxy.style.width = `${startRect.width}px`;
+      proxy.style.height = `${startRect.height}px`;
+      proxy.style.borderRadius = '14px';
+      proxy.innerHTML = `
+        <img src="${imgSrc}" alt="" />
+        <div class="morph-flight-glare"></div>
+      `;
+      document.body.appendChild(proxy);
+
+      // 4. 准备展台视图与 DOM 初始化
+      viewStage.style.display = 'block';
+      viewStage.style.position = 'fixed';
+      viewStage.style.inset = '0';
+      viewStage.style.zIndex = '60';
+      viewStage.style.opacity = '0';
+      viewStage.style.transition = 'opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1)';
+
+      const stageInfo = document.getElementById('stageInfoContent');
+      if (stageInfo) {
+        stageInfo.style.transform = 'translateY(40px)';
+        stageInfo.style.opacity = '0';
+        stageInfo.style.transition = 'transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, opacity 0.85s ease 0.1s';
+      }
+
+      // 执行外部数据初始化 (渲染 3D 轮转展台)
+      if (callback) callback();
+
+      // 暂时隐藏主角卡片，待飞行代理就位后无缝接管
+      const targetCard = (typeof stage3DController !== 'undefined' && stage3DController.cardElements) ? stage3DController.cardElements[0] : null;
+      if (targetCard) {
+        targetCard.style.opacity = '0';
+      }
+
+      // 获取展台主角卡片目标坐标
+      let targetRect = null;
+      if (targetCard) {
+        const r = targetCard.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          targetRect = r;
+        }
+      }
+      if (!targetRect) {
+        const areaW = window.innerWidth * 0.6;
+        const left = Math.round(areaW * 0.24 + areaW * 0.1);
+        const top = Math.round(window.innerHeight * 0.5 - 255);
+        targetRect = { left: Math.max(left, 40), top: Math.max(top, 60), width: 360, height: 510 };
+      }
+
+      // 5. 下一帧触发空间飞行蜕变
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // 主页整体微缩淡出
+          viewHome.style.transition = 'opacity 0.6s ease, transform 0.82s cubic-bezier(0.16, 1, 0.3, 1)';
+          viewHome.style.opacity = '0';
+          viewHome.style.transform = 'scale(0.96)';
+
+          // 展台渐入并推升图文
+          viewStage.style.opacity = '1';
+          if (stageInfo) {
+            stageInfo.style.transform = 'translateY(0)';
+            stageInfo.style.opacity = '1';
+          }
+
+          // 代理卡片在 3D 空间中飞升与微倾
+          proxy.style.left = `${targetRect.left}px`;
+          proxy.style.top = `${targetRect.top}px`;
+          proxy.style.width = `${targetRect.width}px`;
+          proxy.style.height = `${targetRect.height}px`;
+          proxy.style.borderRadius = '18px';
+          proxy.style.transform = 'translateZ(60px) rotateY(-4deg)';
+        });
+      });
+
+      // 6. 飞行合体交接完成 (840ms)
+      setTimeout(() => {
+        if (targetCard) {
+          targetCard.style.opacity = '';
+        }
+        proxy.remove();
+
+        viewHome.classList.remove('current');
+        viewHome.style.display = '';
+        viewHome.style.opacity = '';
+        viewHome.style.transform = '';
+        viewHome.style.transition = '';
+
+        document.querySelectorAll('.home-card').forEach(c => {
+          c.classList.remove('receding');
+          c.style.opacity = '';
+        });
+
+        viewStage.classList.add('current');
+        viewStage.style.display = '';
+        viewStage.style.position = '';
+        viewStage.style.inset = '';
+        viewStage.style.zIndex = '';
+        viewStage.style.opacity = '';
+        viewStage.style.transition = '';
+
+        if (stageInfo) {
+          stageInfo.style.transform = '';
+          stageInfo.style.opacity = '';
+          stageInfo.style.transition = '';
+        }
+
+        isTransitioning = false;
+        lastClickedCard = null;
+      }, 840);
+    }
+
+    // 回退：从展台返回主页 -> 展台主角卡片平滑飞回主页对应槽位
+    function triggerSpatialMorphBackward(callback) {
+      if (isTransitioning) {
+        if (callback) callback();
+        return;
+      }
+      isTransitioning = true;
+
+      // 1. 获取当前展台主角卡片位置
+      const activeIdx = (typeof stage3DController !== 'undefined' && stage3DController.activeIdx) || 0;
+      const stageCard = (typeof stage3DController !== 'undefined' && stage3DController.cardElements) ? stage3DController.cardElements[activeIdx] : null;
+      const startRect = stageCard ? stageCard.getBoundingClientRect() : {
+        left: window.innerWidth * 0.25,
+        top: window.innerHeight * 0.2,
+        width: 360,
+        height: 510
+      };
+      const imgSrc = (stageCard && stageCard.querySelector('img')) ? stageCard.querySelector('img').src : (currentSeries ? currentSeries.cover_thumb : '');
+
+      // 2. 找到对应的主页系列卡片
+      const homeCard = currentSeries ? document.querySelector(`.home-card[data-id="${currentSeries.id}"]`) : null;
+
+      // 3. 创建反向飞行代理卡片
+      const proxy = document.createElement('div');
+      proxy.className = 'morph-flight-proxy';
+      proxy.style.left = `${startRect.left}px`;
+      proxy.style.top = `${startRect.top}px`;
+      proxy.style.width = `${startRect.width}px`;
+      proxy.style.height = `${startRect.height}px`;
+      proxy.style.borderRadius = '18px';
+      proxy.style.transform = 'translateZ(60px) rotateY(-4deg)';
+      proxy.innerHTML = `
+        <img src="${imgSrc}" alt="" />
+        <div class="morph-flight-glare"></div>
+      `;
+      document.body.appendChild(proxy);
+
+      if (stageCard) {
+        stageCard.style.opacity = '0';
+      }
+
+      // 展台图文下落渐隐
+      const stageInfo = document.getElementById('stageInfoContent');
+      if (stageInfo) {
+        stageInfo.style.transition = 'transform 0.45s ease, opacity 0.45s ease';
+        stageInfo.style.transform = 'translateY(30px)';
+        stageInfo.style.opacity = '0';
+      }
+
+      viewStage.style.transition = 'opacity 0.65s ease';
+      viewStage.style.opacity = '0';
+
+      // 4. 主页在后台呈现并由缩放恢复
+      viewHome.style.display = 'block';
+      viewHome.style.position = 'fixed';
+      viewHome.style.inset = '0';
+      viewHome.style.zIndex = '40';
+      viewHome.style.opacity = '0';
+      viewHome.style.transform = 'scale(0.96)';
+      viewHome.style.transition = 'opacity 0.7s ease, transform 0.82s cubic-bezier(0.16, 1, 0.3, 1)';
+
+      if (callback) callback();
+
+      // 确保主页其他卡片保持虚化，目标卡片留白
+      if (homeCard) {
+        document.querySelectorAll('.home-card').forEach(c => {
+          if (c !== homeCard) c.classList.add('receding');
+        });
+        homeCard.style.opacity = '0';
+      }
+
+      let targetRect = homeCard ? homeCard.getBoundingClientRect() : null;
+      if (!targetRect || targetRect.width === 0) {
+        targetRect = { left: window.innerWidth * 0.5 - 150, top: 150, width: 300, height: 400 };
+      }
+
+      // 5. 下一帧触发卡片回落降落
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          viewHome.style.opacity = '1';
+          viewHome.style.transform = 'scale(1)';
+
+          document.querySelectorAll('.home-card').forEach(c => {
+            c.classList.remove('receding');
+          });
+
+          proxy.style.left = `${targetRect.left}px`;
+          proxy.style.top = `${targetRect.top}px`;
+          proxy.style.width = `${targetRect.width}px`;
+          proxy.style.height = `${targetRect.height}px`;
+          proxy.style.borderRadius = '14px';
+          proxy.style.transform = 'translateZ(0) rotateY(0deg)';
+        });
+      });
+
+      // 6. 回归完成
+      setTimeout(() => {
+        if (homeCard) {
+          homeCard.style.opacity = '';
+        }
+        proxy.remove();
+
+        viewStage.classList.remove('current');
+        viewStage.style.display = '';
+        viewStage.style.opacity = '';
+        viewStage.style.transition = '';
+
+        if (stageInfo) {
+          stageInfo.style.transform = '';
+          stageInfo.style.opacity = '';
+          stageInfo.style.transition = '';
+        }
+
+        viewHome.classList.add('current');
+        viewHome.style.display = '';
+        viewHome.style.position = '';
+        viewHome.style.inset = '';
+        viewHome.style.zIndex = '';
+        viewHome.style.opacity = '';
+        viewHome.style.transform = '';
+        viewHome.style.transition = '';
+
+        isTransitioning = false;
+      }, 840);
     }
 
     // ----------------------------------------------------
@@ -1596,6 +1907,7 @@
 
         const card = document.createElement('div');
         card.className = 'home-card';
+        card.dataset.id = series.id;
         card.title = `进入系列展览: ${series.title}`;
         card.innerHTML = `
           <div class="home-card-media">
@@ -1608,6 +1920,7 @@
           </div>
         `;
         card.addEventListener('click', () => {
+          lastClickedCard = card;
           window.location.hash = `#/series/${encodeURIComponent(series.id)}`;
         });
 
@@ -1641,90 +1954,303 @@
         // 播放专属背景音乐
         audioEngine.playTheme(theme.audioFreq);
 
-        // 重置卡片队列为 [0, 1, 2, ...]
-        currentDeckOrder = currentSeries.images.map((_, i) => i);
-
-        renderStageDeck();
-        updateStageEditorial(currentDeckOrder[0], theme);
-      });
+        // 启动 HuyML 风格 3D 无限循环流转引擎 (60%图片队列 + 40%联动图文)
+        stage3DController.init(currentSeries.images);
+      }, 'down');
     }
 
-    // 渲染左侧阶梯错落层叠卡片阵列 (P1, P2, P3...)
-    function renderStageDeck() {
-      stageCardsDeck.innerHTML = '';
+    // ========================================================
+    // HuyML 风格 3D 轴向无限循环流转引擎 (Infinite 3D Stream Carousel)
+    // ========================================================
+    class Stage3DStreamController {
+      constructor() {
+        this.container = document.getElementById('stageStreamArea');
+        this.deck = document.getElementById('stageCardsDeck');
+        this.infoArea = document.getElementById('stageInfoContent');
+        this.cardElements = [];
+        this.currentScroll = 0;
+        this.targetScroll = 0;
+        this.activeIdx = 0;
+        this.isAnimating = false;
+        this.snapTimer = null;
+        this.isDragging = false;
+        this.dragStartY = 0;
+        this.dragStartScroll = 0;
+        this.hasMoved = false;
 
-      currentDeckOrder.forEach((imgIndex, rank) => {
-        const imgItem = currentSeries.images[imgIndex];
-        const card = document.createElement('div');
-        
-        let rankClass = 'rank-hidden';
-        if (rank === 0) rankClass = 'rank-0';
-        else if (rank === 1) rankClass = 'rank-1';
-        else if (rank === 2) rankClass = 'rank-2';
+        this.bindEvents();
+      }
 
-        card.className = `deck-card-item ${rankClass}`;
-        card.dataset.imgIndex = imgIndex;
-        card.title = `P${rank + 1}: ${imgItem.name}`;
+      bindEvents() {
+        // 滚轮控制平滑滚动
+        this.container.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const delta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 80);
+          this.targetScroll += delta * 0.0035;
+          this.scheduleSnap();
+        }, { passive: false });
 
-        card.innerHTML = `
-          <div class="deck-card-tag">P${rank + 1}</div>
-          <div class="deck-card-media">
-            <img class="deck-card-img" src="${imgItem.url}" alt="${imgItem.name}" />
-          </div>
-        `;
+        // 触控与鼠标拖拽
+        const onPointerDown = (e) => {
+          this.isDragging = true;
+          this.hasMoved = false;
+          this.dragStartY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+          this.dragStartScroll = this.targetScroll;
+        };
 
-        // 交互：如果点击的是 P2 或 P3，平滑轮转至主位 P1！
-        card.addEventListener('click', () => {
-          if (rank === 0) {
-            // 点击主位 P1，直接查看大图
-            openPhotoModal(imgIndex);
+        const onPointerMove = (e) => {
+          if (!this.isDragging) return;
+          const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+          const diff = this.dragStartY - clientY;
+          if (Math.abs(diff) > 4) {
+            this.hasMoved = true;
+          }
+          this.targetScroll = this.dragStartScroll + diff * 0.0035;
+        };
+
+        const onPointerUp = () => {
+          if (!this.isDragging) return;
+          this.isDragging = false;
+          this.scheduleSnap();
+        };
+
+        this.container.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        this.container.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+      }
+
+      scheduleSnap() {
+        clearTimeout(this.snapTimer);
+        this.snapTimer = setTimeout(() => {
+          this.targetScroll = Math.round(this.targetScroll);
+        }, 120);
+      }
+
+      init(images) {
+        this.images = images || [];
+        this.count = this.images.length;
+        this.deck.innerHTML = '';
+        this.cardElements = [];
+        this.currentScroll = 0;
+        this.targetScroll = 0;
+        this.activeIdx = 0;
+
+        if (this.count === 0) return;
+
+        // 创建每个卡片 DOM
+        this.images.forEach((img, i) => {
+          const card = document.createElement('div');
+          card.className = 'deck-card-item';
+          card.dataset.index = i;
+          
+          card.innerHTML = `
+            <div class="deck-card-tag" id="cardTag_${i}">P${i + 1}</div>
+            <div class="deck-card-media">
+              <img class="deck-card-img" src="${img.url}" alt="${escapeHtml(img.name)}" loading="lazy" />
+            </div>
+          `;
+
+          // 鼠标悬停弹性拉扯反馈
+          card.addEventListener('mouseenter', () => {
+            card.dataset.hovered = 'true';
+          });
+          card.addEventListener('mouseleave', () => {
+            card.dataset.hovered = 'false';
+          });
+
+          // 点击事件：聚焦点卡片打开全屏大图，背景卡片点击旋转至主位
+          card.addEventListener('click', (e) => {
+            if (this.hasMoved) return; // 拖拽中不触发点击
+            const currentDiff = this.getCardRelativePos(i);
+            if (Math.abs(currentDiff) < 0.45) {
+              // 当前主角卡片
+              openPhotoModal(i);
+            } else {
+              // 背景队列卡片，点击顺滑滑行至主角位
+              this.targetScroll += Math.round(currentDiff);
+              this.scheduleSnap();
+            }
+          });
+
+          this.deck.appendChild(card);
+          this.cardElements.push(card);
+        });
+
+        if (!this.isAnimating) {
+          this.isAnimating = true;
+          this.loop();
+        }
+
+        // 初始化更新右侧文本
+        this.updateEditorial(0);
+      }
+
+      getCardRelativePos(index) {
+        const N = this.count;
+        if (N === 0) return 0;
+        let diff = (index - this.currentScroll) % N;
+        while (diff < -1.5) diff += N;
+        while (diff >= N - 1.5) diff -= N;
+        return diff;
+      }
+
+      interpolateKeyframes(p) {
+        // 关键帧定义沿着 60% 构图对角线 (从左下移出到右上深入)
+        const kfs = [
+          { p: -1.2, x: -0.15, y: 0.98, z: 140, s: 1.20, rx: 2, ry: 6, rz: -10, op: 0.0, br: 0.6 },
+          { p: -0.6, x: 0.05,  y: 0.82, z: 80,  s: 1.10, rx: 5, ry: 9, rz: -7,  op: 0.5, br: 0.85 },
+          { p: 0.0,  x: 0.24,  y: 0.64, z: 30,  s: 1.04, rx: 8, ry: 12, rz: -4, op: 1.0, br: 1.0 },
+          { p: 1.0,  x: 0.50,  y: 0.42, z: -80, s: 0.88, rx: 14, ry: 16, rz: -2, op: 0.88, br: 0.82 },
+          { p: 2.0,  x: 0.76,  y: 0.22, z: -200,s: 0.72, rx: 18, ry: 20, rz: 3,  op: 0.70, br: 0.68 },
+          { p: 3.0,  x: 0.92,  y: 0.12, z: -340,s: 0.56, rx: 22, ry: 24, rz: 6,  op: 0.40, br: 0.52 },
+          { p: 4.0,  x: 1.05,  y: 0.05, z: -500,s: 0.42, rx: 25, ry: 26, rz: 8,  op: 0.0, br: 0.3 }
+        ];
+
+        if (p <= kfs[0].p) return kfs[0];
+        if (p >= kfs[kfs.length - 1].p) return kfs[kfs.length - 1];
+
+        for (let i = 0; i < kfs.length - 1; i++) {
+          const k1 = kfs[i];
+          const k2 = kfs[i + 1];
+          if (k1.p <= p && p <= k2.p) {
+            const t = (p - k1.p) / (k2.p - k1.p);
+            return {
+              x: k1.x + (k2.x - k1.x) * t,
+              y: k1.y + (k2.y - k1.y) * t,
+              z: k1.z + (k2.z - k1.z) * t,
+              s: k1.s + (k2.s - k1.s) * t,
+              rx: k1.rx + (k2.rx - k1.rx) * t,
+              ry: k1.ry + (k2.ry - k1.ry) * t,
+              rz: k1.rz + (k2.rz - k1.rz) * t,
+              op: k1.op + (k2.op - k1.op) * t,
+              br: k1.br + (k2.br - k1.br) * t
+            };
+          }
+        }
+        return kfs[2];
+      }
+
+      loop() {
+        if (!currentSeries || currentView !== 'stage') {
+          this.isAnimating = false;
+          return;
+        }
+
+        // 物理平滑缓动 Lerp
+        this.currentScroll += (this.targetScroll - this.currentScroll) * 0.09;
+
+        const containerRect = this.container.getBoundingClientRect();
+        const cw = containerRect.width || (window.innerWidth * 0.6);
+        const ch = containerRect.height || window.innerHeight;
+
+        const N = this.count;
+        const normalizedActive = ((Math.round(this.currentScroll) % N) + N) % N;
+
+        if (normalizedActive !== this.activeIdx) {
+          this.activeIdx = normalizedActive;
+          this.updateEditorial(this.activeIdx);
+        }
+
+        // 渲染每张卡片
+        this.cardElements.forEach((card, i) => {
+          let p = (i - this.currentScroll) % N;
+          while (p < -1.5) p += N;
+          while (p >= N - 1.5) p -= N;
+
+          // 距离视野外直接隐藏优化性能
+          if (p < -1.4 || p > 4.2) {
+            card.style.display = 'none';
+            return;
+          }
+          card.style.display = 'block';
+
+          const trans = this.interpolateKeyframes(p);
+          const isHovered = card.dataset.hovered === 'true';
+
+          // 卡片中心像素计算
+          let pixelX = trans.x * cw - 180; // 减去卡片半宽 360/2
+          let pixelY = trans.y * ch - 255; // 减去卡片半高 510/2
+          let scale = trans.s;
+          let translateZ = trans.z;
+          let rotateX = trans.rx;
+          let rotateY = trans.ry;
+          let rotateZ = trans.rz;
+
+          // 悬停弹性向外拉扯效果
+          if (isHovered) {
+            pixelX -= 25;
+            pixelY -= 25;
+            translateZ += 40;
+            scale *= 1.05;
+          }
+
+          // 动态标签更新：每张卡片保持其专属编号 P1, P2, P3...
+          const tagEl = document.getElementById(`cardTag_${i}`);
+          if (tagEl) {
+            tagEl.textContent = `P${i + 1}`;
+            tagEl.style.opacity = Math.max(0, trans.op);
+          }
+
+          card.style.transform = `translate3d(${pixelX.toFixed(1)}px, ${pixelY.toFixed(1)}px, ${translateZ.toFixed(1)}px) scale(${scale.toFixed(3)}) rotateX(${rotateX.toFixed(1)}deg) rotateY(${rotateY.toFixed(1)}deg) rotateZ(${rotateZ.toFixed(1)}deg)`;
+          card.style.opacity = trans.op.toFixed(3);
+          card.style.filter = `brightness(${trans.br.toFixed(2)})`;
+          card.style.zIndex = Math.round((1 - Math.abs(p) * 0.25) * 50);
+
+          if (Math.abs(p) < 0.4) {
+            card.classList.add('is-active');
           } else {
-            // 轮转卡片槽位
-            rotateDeckTo(rank);
+            card.classList.remove('is-active');
           }
         });
 
-        stageCardsDeck.appendChild(card);
-      });
+        requestAnimationFrame(() => this.loop());
+      }
+
+      updateEditorial(activeImgIndex) {
+        if (!currentSeries || !currentSeries.images[activeImgIndex]) return;
+        const img = currentSeries.images[activeImgIndex];
+        const total = currentSeries.count;
+        const padNum = String(activeImgIndex + 1).padStart(2, '0');
+        const padTotal = String(total).padStart(2, '0');
+
+        // 更新导航右上角计数器
+        navRefCounter.innerHTML = `${padNum} <span>/ ${padTotal}</span>`;
+
+        // 微过渡淡入淡出动画
+        this.infoArea.classList.add('updating');
+        setTimeout(() => {
+          stageTitleZh.textContent = `P${activeImgIndex + 1}:${img.title || img.name} /`;
+          stageTitleEn.textContent = img.title_en || 'ARTWORK';
+
+          const stageParasContainer = document.getElementById('stageParagraphs');
+          if (stageParasContainer) {
+            stageParasContainer.innerHTML = '';
+            const desc = img.description || '';
+            const paragraphs = desc.split(/\n+/).map(s => s.trim()).filter(Boolean);
+            if (paragraphs.length === 0) {
+              paragraphs.push('超高保真大画幅原作展示。每一处光斑与水墨笔触均经过精确渲染，呈现出丰富的层次感与空间景深。');
+            }
+            paragraphs.forEach(text => {
+              const p = document.createElement('p');
+              p.textContent = text;
+              stageParasContainer.appendChild(p);
+            });
+          }
+
+          stageReadMoreBtn.onclick = () => {
+            openPhotoModal(activeImgIndex);
+          };
+
+          this.infoArea.classList.remove('updating');
+        }, 150);
+      }
     }
 
-    // 轮转卡片队列
-    function rotateDeckTo(targetRank) {
-      if (targetRank <= 0 || targetRank >= currentDeckOrder.length) return;
-      
-      // 提取选中的项置于顶端
-      const selectedItem = currentDeckOrder.splice(targetRank, 1)[0];
-      currentDeckOrder.unshift(selectedItem);
-
-      renderStageDeck();
-      const theme = getThemeForSeries(allSeries.indexOf(currentSeries));
-      updateStageEditorial(currentDeckOrder[0], theme);
-    }
-
-    // 更新右侧标题与杂志段落文本
-    function updateStageEditorial(activeImgIndex, theme) {
-      const activeRank = 0; // 当前主位
-      const totalCount = currentSeries.count;
-      const padNum = String(activeImgIndex + 1).padStart(2, '0');
-      const padTotal = String(totalCount).padStart(2, '0');
-
-      // 更新右上角指示：01 / 03
-      navRefCounter.innerHTML = `${padNum} <span>/ ${padTotal}</span>`;
-
-      // 更新大标题：P1:自然之境 / NATURAL WONDER
-      stageTitleZh.textContent = `P${activeRank + 1}:${theme.titleZh} /`;
-      stageTitleEn.textContent = theme.titleEn;
-
-      // 更新三段式排版文章
-      stagePara1.textContent = theme.para1;
-      stagePara2.textContent = theme.para2;
-      stagePara3.textContent = theme.para3;
-
-      // 绑定 READ MORE 按钮
-      stageReadMoreBtn.onclick = () => {
-        openPhotoModal(activeImgIndex);
-      };
-    }
+    const stage3DController = new Stage3DStreamController();
 
     // ----------------------------------------------------
     // I. 单图独立全屏展示 Modal
@@ -1775,7 +2301,7 @@
             homeBtn.classList.add('active');
             applyTheme(SERIES_THEMES[0]);
             audioEngine.fadeOut(0.8);
-          });
+          }, 'up');
         }
       }
     }
@@ -1848,9 +2374,11 @@
       }
       if (currentView === 'stage') {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-          rotateDeckTo(1);
+          stage3DController.targetScroll += 1;
+          stage3DController.scheduleSnap();
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-          rotateDeckTo(currentDeckOrder.length - 1);
+          stage3DController.targetScroll -= 1;
+          stage3DController.scheduleSnap();
         } else if (e.key === 'Escape') {
           goHome();
         }
@@ -1864,16 +2392,6 @@
         searchInput.blur();
       }
     });
-
-    // 滚轮在舞台卡片上平滑轮转
-    stageCardsDeck.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      if (e.deltaY > 0) {
-        rotateDeckTo(1);
-      } else if (e.deltaY < 0) {
-        rotateDeckTo(currentDeckOrder.length - 1);
-      }
-    }, { passive: false });
 
     function escapeHtml(str) {
       return str.replace(/[&<>'"]/g, t => ({

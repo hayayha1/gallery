@@ -15,9 +15,49 @@ BASE_DIR = Path(__file__).resolve().parent
 PHOTO_DIR = BASE_DIR / "photoes"
 STATIC_DIR = BASE_DIR / "static"
 CACHE_DIR = BASE_DIR / ".cache" / "thumbs"
+DESC_DIR = BASE_DIR / "description"
 
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
+DESC_DIR.mkdir(parents=True, exist_ok=True)
+
+import re
+
+TITLE_EN_MAP = {
+    "倾国": "FATAL BEAUTY",
+    "雷霆": "WRATH OF THUNDER",
+    "太虚": "THE VOID REALM",
+    "撼岳": "MOUNTAIN SHAKER",
+    "听风": "WIND WHISPERER",
+    "红莲": "CRIMSON LOTUS",
+    "幽蝶": "NETHER PHANTOM",
+    "裂空": "VOID BREAKER",
+    "龙啸": "DRAGON ROAR",
+    "业火": "KARMIC INFERNO",
+    "影刃": "SHADOW BLADE",
+    "月华": "MOONLIT LANCE",
+}
+
+def load_all_descriptions() -> Dict[str, str]:
+    desc_map = {}
+    if not DESC_DIR.exists():
+        return desc_map
+    for md_file in DESC_DIR.rglob("*.md"):
+        try:
+            content = md_file.read_text(encoding="utf-8")
+            sections = re.split(r"\n(?=#\s+)", content.strip())
+            for sec in sections:
+                lines = sec.strip().split("\n")
+                if not lines:
+                    continue
+                m = re.match(r"#\s*(.+)", lines[0])
+                if m:
+                    title = m.group(1).strip()
+                    body = "\n".join(lines[1:]).strip()
+                    desc_map[title] = body
+        except Exception:
+            pass
+    return desc_map
 
 app = FastAPI(title="画廊 - Gallery Server")
 
@@ -68,6 +108,7 @@ def list_series():
     if not PHOTO_DIR.exists():
         return {"total": 0, "series": []}
     
+    desc_map = load_all_descriptions()
     series_list = []
     
     # 获取所有子目录
@@ -75,7 +116,6 @@ def list_series():
     
     # 按照名称自然排序 (中文、英文、数字混合)
     def natural_sort_key(folder: Path):
-        import re
         parts = re.split(r'(\d+)', folder.name)
         return [int(p) if p.isdigit() else p.lower() for p in parts]
     
@@ -94,13 +134,24 @@ def list_series():
         if not images:
             continue
             
+        series_title = folder.name
+        if folder.name == "新建文件夹":
+            series_title = "浮世绘人物系列 · 火"
+            
         img_items = []
         for img_path in images:
             meta = get_image_meta(img_path)
             encoded_folder = urllib.parse.quote(folder.name)
             encoded_name = urllib.parse.quote(img_path.name)
+            clean_title = re.sub(r'^\d+[\s_-]*', '', img_path.stem).strip()
+            desc = desc_map.get(clean_title, "")
+            title_en = TITLE_EN_MAP.get(clean_title, clean_title.upper() if clean_title else "ARTWORK")
+            
             img_items.append({
                 "name": img_path.name,
+                "title": clean_title if clean_title else img_path.stem,
+                "title_en": title_en,
+                "description": desc,
                 "url": f"/api/image/{encoded_folder}/{encoded_name}",
                 "thumb": f"/api/thumb/{encoded_folder}/{encoded_name}",
                 "width": meta["width"],
@@ -112,7 +163,8 @@ def list_series():
         first_img = img_items[0]
         series_list.append({
             "id": folder.name,
-            "title": folder.name,
+            "title": series_title,
+            "folder": folder.name,
             "count": len(img_items),
             "cover": first_img["url"],
             "cover_thumb": first_img["thumb"],
