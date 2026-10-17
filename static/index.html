@@ -40,7 +40,7 @@
       user-select: none;
     }
 
-    /* 全屏动态背景 Canvas (绘制星尘浮动、3D透视网格、斜向发光导引线) */
+    /* 全屏动态背景 Canvas (深空宇宙旗舰版：电离星云暗涌、时空引力曲率网格、3D景深星海、偶发微流星) */
     #bgCanvas {
       position: fixed;
       inset: 0;
@@ -528,26 +528,24 @@
     }
 
     /* ========================================================
-       5. 视图二：【HuyML 风格 3D 轮转展台】：60% 图片队列 + 40% 联动图文
+       5. 视图二：【HuyML 风格 3D 轮转展台】：全视口深景深 + 图文紧密联动
        ======================================================== */
     .stage-view-wrapper {
       width: 100vw;
       height: 100vh;
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 70px 48px 30px 48px;
       overflow: hidden;
+      padding: 0;
     }
 
-    /* 左侧 60% 宽度：3D 透视流动流视口 (超过中线达到 60%) */
+    /* 3D 透视流动视口：铺满全屏，让卡片对角线自由贯穿 */
     .stage-stream-area {
-      position: relative;
-      width: 60%;
-      height: 100%;
-      perspective: 1400px;
-      perspective-origin: 50% 55%;
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      perspective: 1500px;
+      perspective-origin: 50% 50%;
       overflow: visible;
       cursor: grab;
       user-select: none;
@@ -558,10 +556,12 @@
     }
 
     .stage-3d-deck {
-      position: relative;
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
       transform-style: preserve-3d;
+      pointer-events: none;
     }
 
     /* 每一个 3D 卡片槽位 */
@@ -573,16 +573,18 @@
       cursor: pointer;
       transform-style: preserve-3d;
       will-change: transform, opacity, filter, box-shadow;
-      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+      transition: box-shadow 0.35s ease, border-color 0.35s ease;
       background: #0d121c;
       border: 1.5px solid rgba(255, 255, 255, 0.22);
       box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85);
       user-select: none;
+      pointer-events: auto;
     }
 
+    /* 当前展示照片主角位高亮增强 */
     .deck-card-item.is-active {
-      border-color: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 35px 85px -10px rgba(0, 0, 0, 0.95), 0 0 45px var(--theme-accent-glow);
+      border-color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 40px 95px -10px rgba(0, 0, 0, 0.95), 0 0 50px var(--theme-accent-glow);
     }
 
     .deck-card-item:hover {
@@ -592,7 +594,7 @@
     /* 卡片顶部的 P1 / P2 / P3 标注文本 */
     .deck-card-tag {
       position: absolute;
-      top: -50px;
+      top: -48px;
       left: 4px;
       font-size: 40px;
       font-weight: 800;
@@ -623,8 +625,8 @@
     /* 滚动交互提示徽章 */
     .stage-scroll-badge {
       position: absolute;
-      bottom: 24px;
-      left: 24px;
+      bottom: 28px;
+      left: 36px;
       padding: 7px 16px;
       border-radius: 9999px;
       border: 1px solid rgba(56, 189, 248, 0.35);
@@ -646,24 +648,27 @@
     }
 
     /* ----------------------------------------------------
-       右侧 40% 宽度：图文联动展示区 (删去 SERIES INDEX，提升高级留白)
+       图文联动展示区：向右移至 left: 55vw，与主角卡片保持舒适的高级留白
        ---------------------------------------------------- */
     .stage-info-content {
-      width: 40%;
-      max-width: 620px;
+      position: absolute;
+      left: 55vw;
+      top: 55%;
+      transform: translateY(-50%);
+      width: 38vw;
+      max-width: 540px;
       display: flex;
       flex-direction: column;
-      gap: 28px;
-      padding-left: 40px;
-      padding-right: 20px;
-      position: relative;
-      z-index: 10;
+      gap: 26px;
+      padding: 0;
+      z-index: 25;
+      pointer-events: auto;
       transition: opacity 0.22s ease, transform 0.22s ease;
     }
 
     .stage-info-content.updating {
       opacity: 0.15;
-      transform: translateY(6px);
+      transform: translateY(calc(-50% + 6px));
     }
 
     /* 主标题：P1:倾国 / FATAL BEAUTY */
@@ -1185,7 +1190,7 @@
     }
 
     // ----------------------------------------------------
-    // B. 全屏动态背景 Canvas 引擎 (星尘浮动 + 3D透视网格 + 斜向发光箭头)
+    // B. 全屏动态背景 Canvas 引擎 (方案 A 旗舰版：舞台背光光晕 + 流动极光光带 + 漂浮星际余烬 + 密集高维星海)
     // ----------------------------------------------------
     class DynamicBackgroundEngine {
       constructor(canvasId) {
@@ -1193,16 +1198,56 @@
         this.ctx = this.canvas.getContext('2d');
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-        this.particles = [];
+        
+        // 主题与色彩状态
         this.theme = SERIES_THEMES[0];
+        
+        // 时间轴与带物理阻尼平滑跟踪的交互坐标
         this.time = 0;
         this.mouseX = this.width / 2;
         this.mouseY = this.height / 2;
+        this.smoothMouseX = this.width / 2;
+        this.smoothMouseY = this.height / 2;
+
+        // 深空星云暗涌
+        this.nebulae = [];
+        // 横贯深空的流动极光光带 (Aurora Ribbons)
+        this.auroraRibbons = [];
+        // 三维分层星辰系统 (密集深空)
+        this.stars = [];
+        // 主角卡片周围漂浮的星际余烬微粒 (Cosmic Embers)
+        this.embers = [];
+        // 偶发深空微流星
+        this.meteors = [];
+        this.nextMeteorTime = 4; // 启动后第 4 秒触发首颗微流星
+        
+        // 时空网格上的光脉冲 (Telemetry Packets)
+        this.gridPulses = [
+          { rayIdx: 2, progress: 0.12, speed: 0.0035 },
+          { rayIdx: 4, progress: 0.72, speed: 0.0048 },
+          { rayIdx: 6, progress: 0.45, speed: 0.0038 },
+          { rayIdx: 8, progress: 0.28, speed: 0.0032 }
+        ];
 
         this.initCanvas();
-        this.initParticles();
+        this.initCosmicElements();
         this.bindEvents();
         this.animate();
+      }
+
+      getAlphaColor(colorStr, alpha) {
+        if (!colorStr) return `rgba(56, 189, 248, ${alpha})`;
+        if (colorStr.startsWith('rgba')) {
+          return colorStr.replace(/[\d.]+\)$/, `${alpha})`);
+        }
+        if (colorStr.startsWith('#')) {
+          const hex = colorStr.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16) || 56;
+          const g = parseInt(hex.substring(2, 4), 16) || 189;
+          const b = parseInt(hex.substring(4, 6), 16) || 248;
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        return colorStr;
       }
 
       initCanvas() {
@@ -1213,19 +1258,149 @@
         this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
       }
 
-      initParticles() {
-        this.particles = [];
-        const count = 55;
-        for (let i = 0; i < count; i++) {
-          this.particles.push({
-            x: Math.random() * this.width,
-            y: Math.random() * this.height,
-            size: Math.random() * 2.2 + 0.6,
-            speedX: (Math.random() - 0.5) * 0.4,
-            speedY: (Math.random() - 0.5) * 0.5,
-            opacity: Math.random() * 0.7 + 0.3,
-            pulseSpeed: Math.random() * 0.03 + 0.015,
-            pulsePhase: Math.random() * Math.PI * 2
+      initCosmicElements() {
+        const w = this.width;
+        const h = this.height;
+
+        // 1. 初始化深空星云暗涌 (可见度全面提升，呈现丰富色阶)
+        this.nebulae = [
+          {
+            baseX: 0.25, baseY: 0.32,
+            radiusRatio: 0.48,
+            driftSpeed: 0.0006,
+            driftPhase: 0,
+            driftRadius: 60,
+            alpha: 0.20
+          },
+          {
+            baseX: 0.76, baseY: 0.36,
+            radiusRatio: 0.52,
+            driftSpeed: 0.0007,
+            driftPhase: Math.PI * 0.75,
+            driftRadius: 70,
+            alpha: 0.16
+          },
+          {
+            baseX: 0.45, baseY: 0.78,
+            radiusRatio: 0.55,
+            driftSpeed: 0.0005,
+            driftPhase: Math.PI * 1.45,
+            driftRadius: 65,
+            alpha: 0.18
+          }
+        ];
+
+        // 2. 初始化流动极光光带 (Aurora Ribbons: 填补中上部与左侧大面积空洞)
+        this.auroraRibbons = [
+          {
+            baseY: 0.24,
+            thickness: 120,
+            amp1: 45,
+            amp2: 25,
+            freq1: 0.0022,
+            freq2: 0.0045,
+            phase1: 0,
+            phase2: 1.2,
+            speed: 0.0008,
+            alpha: 0.15
+          },
+          {
+            baseY: 0.42,
+            thickness: 150,
+            amp1: 55,
+            amp2: 30,
+            freq1: 0.0018,
+            freq2: 0.0038,
+            phase1: 2.1,
+            phase2: 0.8,
+            speed: 0.0006,
+            alpha: 0.13
+          },
+          {
+            baseY: 0.68,
+            thickness: 140,
+            amp1: 40,
+            amp2: 28,
+            freq1: 0.0025,
+            freq2: 0.0050,
+            phase1: 3.5,
+            phase2: 2.4,
+            speed: 0.0007,
+            alpha: 0.11
+          }
+        ];
+
+        // 3. 初始化三维分层密集星海系统 (共约 210 颗星)
+        this.stars = [];
+        
+        // Layer 0: 远景深空微星 (140 颗，0.3~0.8px，真实闪烁，形成丰富星河织锦)
+        for (let i = 0; i < 140; i++) {
+          this.stars.push({
+            layer: 0,
+            x: Math.random() * w,
+            y: Math.random() * h,
+            size: Math.random() * 0.5 + 0.35,
+            baseAlpha: Math.random() * 0.55 + 0.30,
+            twinkleSpeed: Math.random() * 0.035 + 0.015,
+            twinklePhase: Math.random() * Math.PI * 2,
+            speedX: (Math.random() - 0.5) * 0.07,
+            speedY: (Math.random() - 0.5) * 0.07,
+            hasSpike: false,
+            colorType: Math.random() > 0.75 ? 'accent' : 'white'
+          });
+        }
+
+        // Layer 1: 中景主序恒星 (50 颗，1.0~1.9px，光晕饱满，其中 8 颗具备 JWST 衍射星芒)
+        for (let i = 0; i < 50; i++) {
+          const isSpikeStar = i < 8; // 保证前 8 颗拥有清晰耀眼的太空望远镜十字星芒
+          this.stars.push({
+            layer: 1,
+            x: Math.random() * w,
+            y: Math.random() * h,
+            size: isSpikeStar ? Math.random() * 0.6 + 1.6 : Math.random() * 0.7 + 1.0,
+            baseAlpha: Math.random() * 0.35 + 0.65,
+            twinkleSpeed: Math.random() * 0.025 + 0.015,
+            twinklePhase: Math.random() * Math.PI * 2,
+            speedX: (Math.random() - 0.5) * 0.14,
+            speedY: (Math.random() - 0.5) * 0.14,
+            hasSpike: isSpikeStar,
+            spikeLen: Math.random() * 10 + 12,
+            colorType: Math.random() > 0.4 ? 'accent' : 'white'
+          });
+        }
+
+        // Layer 2: 前景漂浮失焦星际微尘 (18 颗，3.2~6.0px，高视差，柔和光斑)
+        for (let i = 0; i < 18; i++) {
+          this.stars.push({
+            layer: 2,
+            x: Math.random() * w,
+            y: Math.random() * h,
+            size: Math.random() * 2.8 + 3.2,
+            baseAlpha: Math.random() * 0.16 + 0.10,
+            twinkleSpeed: Math.random() * 0.018 + 0.008,
+            twinklePhase: Math.random() * Math.PI * 2,
+            speedX: (Math.random() - 0.5) * 0.24,
+            speedY: (Math.random() - 0.5) * 0.24,
+            hasSpike: false,
+            colorType: 'glow'
+          });
+        }
+
+        // 4. 初始化主角卡片周围漂浮的星际余烬 (Cosmic Embers: 32 颗温润上浮微粒)
+        this.embers = [];
+        for (let i = 0; i < 32; i++) {
+          this.embers.push({
+            x: w * (0.16 + Math.random() * 0.42),
+            y: h * (0.20 + Math.random() * 0.75),
+            size: Math.random() * 1.5 + 1.0,
+            speedY: Math.random() * 0.6 + 0.35,
+            wobbleSpeed: Math.random() * 0.03 + 0.015,
+            wobbleAmp: Math.random() * 0.8 + 0.4,
+            wobblePhase: Math.random() * Math.PI * 2,
+            baseAlpha: Math.random() * 0.45 + 0.40,
+            pulseSpeed: Math.random() * 0.04 + 0.02,
+            pulsePhase: Math.random() * Math.PI * 2,
+            isCore: Math.random() > 0.65
           });
         }
       }
@@ -1237,7 +1412,7 @@
       bindEvents() {
         window.addEventListener('resize', () => {
           this.initCanvas();
-          this.initParticles();
+          this.initCosmicElements();
         });
         window.addEventListener('mousemove', (e) => {
           this.mouseX = e.clientX;
@@ -1245,153 +1420,460 @@
         });
       }
 
-      drawPerspectiveGrid() {
+      // 1. 绘制底层电离星云暗涌 (提升丰满度与深空色彩层次)
+      drawCosmicNebula() {
         const ctx = this.ctx;
         const w = this.width;
         const h = this.height;
 
-        // 绘制右下角科技艺术透视网格 (参考图中右下角的透视网格)
+        ctx.save();
+        this.nebulae.forEach((neb, idx) => {
+          const offsetX = Math.sin(this.time * neb.driftSpeed * 60 + neb.driftPhase) * neb.driftRadius;
+          const offsetY = Math.cos(this.time * neb.driftSpeed * 50 + neb.driftPhase) * neb.driftRadius;
+          const cx = neb.baseX * w + offsetX;
+          const cy = neb.baseY * h + offsetY;
+          const radius = Math.max(w, h) * neb.radiusRatio;
+
+          const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+          const innerColor = (idx % 2 === 0) 
+            ? this.getAlphaColor(this.theme.accentHex, neb.alpha) 
+            : this.getAlphaColor(this.theme.glowRgba, neb.alpha * 0.8);
+          const midColor = this.getAlphaColor(this.theme.glowRgba, neb.alpha * 0.4);
+
+          grad.addColorStop(0, innerColor);
+          grad.addColorStop(0.48, midColor);
+          grad.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      // 2. 方案 A 核心：绘制主角卡片后方「能量场舞台背光（Hero Stage Aura）」
+      drawHeroStageAura() {
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+
+        // 主角卡片背光中心 (位于屏幕偏左侧 35% 处，对应 3D 展台主角卡片)
+        const mouseOffX = (this.smoothMouseX - w / 2) * 0.025;
+        const mouseOffY = (this.smoothMouseY - h / 2) * 0.025;
+        const heroX = w * 0.35 + mouseOffX;
+        const heroY = h * 0.50 + mouseOffY;
+
+        // 柔和呼吸脉冲
+        const pulse = Math.sin(this.time * 1.5) * 25;
+        const coreRadius = Math.min(w, h) * 0.42 + pulse;
+
+        ctx.save();
+        // 主光晕：大范围多层径向柔光背晕，直接映衬卡片轮廓，产生强烈的立体悬浮感
+        const heroGrad = ctx.createRadialGradient(heroX, heroY, 30, heroX, heroY, coreRadius);
+        heroGrad.addColorStop(0, this.getAlphaColor(this.theme.accentHex, 0.32));
+        heroGrad.addColorStop(0.35, this.getAlphaColor(this.theme.glowRgba, 0.18));
+        heroGrad.addColorStop(0.70, this.getAlphaColor(this.theme.glowRgba, 0.06));
+        heroGrad.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = heroGrad;
+        ctx.beginPath();
+        ctx.arc(heroX, heroY, coreRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 右侧文字标题辅助光晕 (提升右侧 40% 排版通透感)
+        const textX = w * 0.68 + mouseOffX * 0.5;
+        const textY = h * 0.48 + mouseOffY * 0.5;
+        const textRadius = Math.min(w, h) * 0.32;
+        const textGrad = ctx.createRadialGradient(textX, textY, 20, textX, textY, textRadius);
+        textGrad.addColorStop(0, this.getAlphaColor(this.theme.glowRgba, 0.15));
+        textGrad.addColorStop(0.55, this.getAlphaColor(this.theme.glowRgba, 0.04));
+        textGrad.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = textGrad;
+        ctx.beginPath();
+        ctx.arc(textX, textY, textRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // 3. 方案 A 核心：绘制横贯深空的「流动极光/能量光带（Cosmic Aurora Ribbons）」
+      drawAuroraRibbons() {
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+
+        ctx.save();
+        // 使用 screen 混合模式实现极光丝绸般的光华叠加
+        ctx.globalCompositeOperation = 'screen';
+
+        this.auroraRibbons.forEach((ribbon) => {
+          const t = this.time * ribbon.speed * 60;
+          const points = [];
+          const step = w / 22;
+
+          // 上边缘曲线
+          for (let x = -50; x <= w + 50; x += step) {
+            const wave1 = Math.sin(x * ribbon.freq1 + t + ribbon.phase1) * ribbon.amp1;
+            const wave2 = Math.cos(x * ribbon.freq2 - t * 0.7 + ribbon.phase2) * ribbon.amp2;
+            const y = ribbon.baseY * h + wave1 + wave2;
+            points.push({ x, y });
+          }
+
+          // 渐变填充光带
+          const grad = ctx.createLinearGradient(0, ribbon.baseY * h - 70, 0, ribbon.baseY * h + ribbon.thickness + 70);
+          grad.addColorStop(0, 'transparent');
+          grad.addColorStop(0.35, this.getAlphaColor(this.theme.accentHex, ribbon.alpha));
+          grad.addColorStop(0.65, this.getAlphaColor(this.theme.glowRgba, ribbon.alpha * 0.75));
+          grad.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) {
+            const prev = points[i - 1];
+            const curr = points[i];
+            const cx = (prev.x + curr.x) / 2;
+            const cy = (prev.y + curr.y) / 2;
+            ctx.quadraticCurveTo(prev.x, prev.y, cx, cy);
+          }
+          ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+
+          // 闭合至下边缘波形
+          for (let i = points.length - 1; i >= 0; i--) {
+            const p = points[i];
+            const bottomY = p.y + ribbon.thickness + Math.sin(p.x * 0.004 + t) * 22;
+            if (i === points.length - 1) {
+              ctx.lineTo(p.x, bottomY);
+            } else {
+              const prev = points[i + 1];
+              const prevBottomY = prev.y + ribbon.thickness + Math.sin(prev.x * 0.004 + t) * 22;
+              const cx = (prev.x + p.x) / 2;
+              const cy = (prevBottomY + bottomY) / 2;
+              ctx.quadraticCurveTo(prev.x, prevBottomY, cx, cy);
+            }
+          }
+          ctx.closePath();
+          ctx.fill();
+        });
+
+        ctx.restore();
+      }
+
+      // 4. 方案 A 核心：绘制主角卡片周围的「漂浮星际余烬（Cosmic Embers）」
+      drawCosmicEmbers() {
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+
+        ctx.save();
+        this.embers.forEach(p => {
+          p.y -= p.speedY;
+          p.x += Math.sin(this.time * p.wobbleSpeed * 60 + p.wobblePhase) * p.wobbleAmp;
+
+          // 越过顶部时重置至卡片底部区域
+          if (p.y < h * 0.16) {
+            p.y = h * 0.88 + Math.random() * (h * 0.1);
+            p.x = w * (0.16 + Math.random() * 0.42);
+          }
+
+          const currentAlpha = p.baseAlpha * (0.6 + 0.4 * Math.sin(this.time * p.pulseSpeed * 60 + p.pulsePhase));
+          
+          ctx.fillStyle = p.isCore ? '#ffffff' : this.getAlphaColor(this.theme.accentHex, currentAlpha);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 微光温润外晕
+          if (p.size > 1.2) {
+            ctx.fillStyle = this.getAlphaColor(this.theme.glowRgba, currentAlpha * 0.55);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 2.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+        ctx.restore();
+      }
+
+      // 5. 绘制时空曲率与引力天球网格 (保留右下角透视构图，线条更加通透饱满)
+      drawSpacetimeGrid() {
+        const ctx = this.ctx;
+        const w = this.width;
+        const h = this.height;
+
         const originX = w * 0.95;
-        const originY = h * 0.62;
-        const gridW = w * 0.45;
-        const gridH = h * 0.38;
+        const originY = h * 0.60;
+        const gridW = w * 0.50;
 
         ctx.save();
         ctx.strokeStyle = this.theme.gridRgba;
         ctx.lineWidth = 1;
 
-        // 纵深辐射线
         const rayCount = 10;
+        const rayPoints = [];
+
+        // A. 纵向引力波辐射线 (加入细微正弦时空曲率波动)
         for (let i = 0; i <= rayCount; i++) {
           const t = i / rayCount;
-          const startX = originX - gridW * (1 - t * 0.3);
+          const startX = originX - gridW * (1 - t * 0.28);
           const startY = h;
+          const endX = originX + t * 45;
+          const endY = originY;
+
+          const steps = 14;
           ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.lineTo(originX + t * 40, originY);
+          const pts = [];
+          for (let s = 0; s <= steps; s++) {
+            const progress = s / steps;
+            const px = startX + (endX - startX) * progress;
+            const py = startY + (endY - startY) * progress;
+            const wave = Math.sin(progress * 6 - this.time * 0.5 + i * 0.4) * 3.5 * (1 - progress);
+            const curvedX = px + wave;
+            pts.push({ x: curvedX, y: py });
+            if (s === 0) {
+              ctx.moveTo(curvedX, py);
+            } else {
+              ctx.lineTo(curvedX, py);
+            }
+          }
+          rayPoints.push(pts);
           ctx.stroke();
         }
 
-        // 水平透视线 (间距由密到疏)
-        const horizCount = 7;
+        // B. 弧形时空测地线 (由密到疏，平缓的引力下陷)
+        const horizCount = 8;
         for (let j = 1; j <= horizCount; j++) {
           const progress = Math.pow(j / horizCount, 2);
           const currentY = originY + (h - originY) * progress;
           const currentXStart = originX - gridW * progress;
+
           ctx.beginPath();
-          ctx.moveTo(currentXStart, currentY);
-          ctx.lineTo(w, currentY);
+          const hSteps = 16;
+          for (let hs = 0; hs <= hSteps; hs++) {
+            const hProg = hs / hSteps;
+            const hx = currentXStart + (w - currentXStart) * hProg;
+            const sag = Math.sin(hProg * Math.PI) * (14 * progress);
+            const hy = currentY + sag;
+            if (hs === 0) {
+              ctx.moveTo(hx, hy);
+            } else {
+              ctx.lineTo(hx, hy);
+            }
+          }
           ctx.stroke();
         }
+
+        // C. 沿坐标线流转滑行的射电探测脉冲 (Telemetry Packets)
+        this.gridPulses.forEach(pulse => {
+          pulse.progress += pulse.speed;
+          if (pulse.progress > 1) {
+            pulse.progress = 0;
+            pulse.rayIdx = Math.floor(Math.random() * rayPoints.length);
+          }
+          const pts = rayPoints[pulse.rayIdx];
+          if (pts && pts.length > 0) {
+            const sampleIdx = Math.min(Math.floor(pulse.progress * (pts.length - 1)), pts.length - 1);
+            const pt = pts[sampleIdx];
+            if (pt) {
+              // 脉冲发光核心
+              ctx.fillStyle = '#ffffff';
+              ctx.beginPath();
+              ctx.arc(pt.x, pt.y, 2.2, 0, Math.PI * 2);
+              ctx.fill();
+
+              // 脉冲外晕
+              ctx.fillStyle = this.getAlphaColor(this.theme.glowRgba, 0.55);
+              ctx.beginPath();
+              ctx.arc(pt.x, pt.y, 7.0, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        });
+
+        // D. 引力中心原点处的微型天体光核
+        const originGlow = ctx.createRadialGradient(originX, originY, 1, originX, originY, 26);
+        originGlow.addColorStop(0, '#ffffff');
+        originGlow.addColorStop(0.35, this.theme.accentHex || '#38bdf8');
+        originGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = originGlow;
+        ctx.beginPath();
+        ctx.arc(originX, originY, 26, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.restore();
       }
 
-      drawDiagonalLuminousArrow() {
+      // 6. 绘制偶发深空微流星 (Meteor Streaks)
+      drawMeteors() {
+        const ctx = this.ctx;
+        const now = this.time;
+
+        if (now > this.nextMeteorTime && this.meteors.length === 0) {
+          const startX = this.width * (0.30 + Math.random() * 0.60);
+          const startY = this.height * (0.02 + Math.random() * 0.18);
+          const angle = Math.PI * (0.75 + (Math.random() - 0.5) * 0.12);
+          const speed = Math.random() * 9 + 15;
+          const length = Math.random() * 95 + 115;
+
+          this.meteors.push({
+            x: startX,
+            y: startY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            length: length,
+            life: 1.0,
+            decay: Math.random() * 0.022 + 0.026
+          });
+
+          this.nextMeteorTime = now + (11 + Math.random() * 9);
+        }
+
+        for (let i = this.meteors.length - 1; i >= 0; i--) {
+          const m = this.meteors[i];
+          m.x += m.vx;
+          m.y += m.vy;
+          m.life -= m.decay;
+
+          if (m.life <= 0 || m.x < -100 || m.y > this.height + 100) {
+            this.meteors.splice(i, 1);
+            continue;
+          }
+
+          const speedDist = Math.hypot(m.vx, m.vy);
+          const tailX = m.x - (m.vx / speedDist) * m.length;
+          const tailY = m.y - (m.vy / speedDist) * m.length;
+
+          const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+          grad.addColorStop(0, `rgba(255, 255, 255, ${m.life})`);
+          grad.addColorStop(0.35, this.getAlphaColor(this.theme.accentHex, m.life * 0.9));
+          grad.addColorStop(1, 'transparent');
+
+          ctx.save();
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y);
+          ctx.lineTo(tailX, tailY);
+          ctx.stroke();
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${m.life})`;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // 7. 绘制密集三维景深星海与显眼 JWST 十字星芒
+      drawDeepSpaceStarfield() {
         const ctx = this.ctx;
         const w = this.width;
         const h = this.height;
 
-        // 根据用户构图手绘草图：斜向贯穿光束箭头贯穿整个卡片队列中心，延伸至 60% 位置
-        const startX = w * 0.58;
-        const startY = h * 0.16;
-        const endX = w * 0.03;
-        const endY = h * 0.94;
+        this.smoothMouseX += (this.mouseX - this.smoothMouseX) * 0.05;
+        this.smoothMouseY += (this.mouseY - this.smoothMouseY) * 0.05;
+        const mouseNormX = (this.smoothMouseX - w / 2);
+        const mouseNormY = (this.smoothMouseY - h / 2);
 
-        ctx.save();
-        // 外部微光晕
-        ctx.strokeStyle = this.theme.glowRgba;
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
+        this.stars.forEach(s => {
+          s.x += s.speedX;
+          s.y += s.speedY;
 
-        // 内部核心高亮线
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
+          if (s.x < 0) s.x = w;
+          if (s.x > w) s.x = 0;
+          if (s.y < 0) s.y = h;
+          if (s.y > h) s.y = 0;
 
-        // 沿轨道滑动的发光能量粒子 (视觉引导流动方向)
-        const trackT = (this.time * 0.25) % 1.0;
-        const beamPx = startX + (endX - startX) * trackT;
-        const beamPy = startY + (endY - startY) * trackT;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(beamPx, beamPy, 3.5, 0, Math.PI * 2);
-        ctx.fill();
+          let parallaxFactor = 0.008;
+          if (s.layer === 1) parallaxFactor = 0.022;
+          if (s.layer === 2) parallaxFactor = 0.055;
 
-        // 左下端发光箭头
-        const arrowAngle = Math.atan2(endY - startY, endX - startX);
-        const headLen = 22;
-        ctx.beginPath();
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(endX - headLen * Math.cos(arrowAngle - Math.PI / 6), endY - headLen * Math.sin(arrowAngle - Math.PI / 6));
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(endX - headLen * Math.cos(arrowAngle + Math.PI / 6), endY - headLen * Math.sin(arrowAngle + Math.PI / 6));
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+          const drawX = s.x + mouseNormX * parallaxFactor;
+          const drawY = s.y + mouseNormY * parallaxFactor;
 
-        // 箭头端点星芒光晕
-        const pulse = Math.sin(this.time * 2.5) * 6 + 18;
-        const glowGrad = ctx.createRadialGradient(endX, endY, 1, endX, endY, pulse);
-        glowGrad.addColorStop(0, '#ffffff');
-        glowGrad.addColorStop(0.3, this.theme.accentHex);
-        glowGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = glowGrad;
-        ctx.beginPath();
-        ctx.arc(endX, endY, pulse, 0, Math.PI * 2);
-        ctx.fill();
+          const twinkle = 0.7 + 0.3 * Math.sin(this.time * s.twinkleSpeed * 50 + s.twinklePhase);
+          const currentAlpha = s.baseAlpha * twinkle;
 
-        ctx.restore();
-      }
-
-      drawParticles() {
-        const ctx = this.ctx;
-        const mouseOffsetX = (this.mouseX - this.width / 2) * 0.03;
-        const mouseOffsetY = (this.mouseY - this.height / 2) * 0.03;
-
-        this.particles.forEach(p => {
-          p.x += p.speedX;
-          p.y += p.speedY;
-          if (p.x < 0) p.x = this.width;
-          if (p.x > this.width) p.x = 0;
-          if (p.y < 0) p.y = this.height;
-          if (p.y > this.height) p.y = 0;
-
-          const currentOpacity = p.opacity * (0.6 + 0.4 * Math.sin(this.time * p.pulseSpeed + p.pulsePhase));
-          const posX = p.x + mouseOffsetX;
-          const posY = p.y + mouseOffsetY;
-
-          ctx.fillStyle = `rgba(255, 255, 255, ${currentOpacity})`;
-          ctx.beginPath();
-          ctx.arc(posX, posY, p.size, 0, Math.PI * 2);
-          ctx.fill();
-
-          // 核心亮点外晕
-          if (p.size > 1.6) {
-            ctx.fillStyle = this.theme.glowRgba;
+          // A. 远景微星 (密集细腻)
+          if (s.layer === 0) {
+            ctx.fillStyle = s.colorType === 'accent' ? (this.theme.accentHex || '#38bdf8') : '#ffffff';
+            ctx.globalAlpha = currentAlpha;
             ctx.beginPath();
-            ctx.arc(posX, posY, p.size * 2.6, 0, Math.PI * 2);
+            ctx.arc(drawX, drawY, s.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // B. 中景主序恒星 (带清晰光晕与 JWST 十字/六芒衍射星芒)
+          else if (s.layer === 1) {
+            ctx.globalAlpha = currentAlpha;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, s.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 恒星饱满柔光晕
+            ctx.fillStyle = this.getAlphaColor(this.theme.glowRgba, currentAlpha * 0.65);
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, s.size * 3.0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // JWST 十字微光芒 (增加视觉穿透力)
+            if (s.hasSpike) {
+              const spLen = s.spikeLen * (0.85 + 0.15 * Math.sin(this.time * 2.2 + s.twinklePhase));
+              ctx.strokeStyle = `rgba(255, 255, 255, ${currentAlpha * 0.55})`;
+              ctx.lineWidth = 0.85;
+              ctx.beginPath();
+              // 主十字轴
+              ctx.moveTo(drawX - spLen, drawY);
+              ctx.lineTo(drawX + spLen, drawY);
+              ctx.moveTo(drawX, drawY - spLen);
+              ctx.lineTo(drawX, drawY + spLen);
+              // 次级 45 度微光芒
+              const diagLen = spLen * 0.38;
+              ctx.moveTo(drawX - diagLen, drawY - diagLen);
+              ctx.lineTo(drawX + diagLen, drawY + diagLen);
+              ctx.moveTo(drawX - diagLen, drawY + diagLen);
+              ctx.lineTo(drawX + diagLen, drawY - diagLen);
+              ctx.stroke();
+            }
+          }
+
+          // C. 前景失焦星际微尘 (虚化大光斑 Bokeh)
+          else if (s.layer === 2) {
+            const bokehGrad = ctx.createRadialGradient(drawX, drawY, 0, drawX, drawY, s.size);
+            bokehGrad.addColorStop(0, this.getAlphaColor(this.theme.glowRgba, currentAlpha));
+            bokehGrad.addColorStop(0.6, this.getAlphaColor(this.theme.glowRgba, currentAlpha * 0.35));
+            bokehGrad.addColorStop(1, 'transparent');
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = bokehGrad;
+            ctx.beginPath();
+            ctx.arc(drawX, drawY, s.size, 0, Math.PI * 2);
             ctx.fill();
           }
         });
+
+        ctx.globalAlpha = 1.0;
       }
 
       animate() {
-        this.time += 0.04;
+        this.time += 0.035;
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // 绘制动态透视网格
-        this.drawPerspectiveGrid();
-        // 绘制斜向贯穿光束箭头
-        this.drawDiagonalLuminousArrow();
-        // 绘制浮动星尘粒子
-        this.drawParticles();
+        // 1. 绘制底层电离星云暗涌
+        this.drawCosmicNebula();
+        // 2. 方案 A：绘制主角卡片背光与舞台氛围光晕
+        this.drawHeroStageAura();
+        // 3. 方案 A：绘制横贯深空的流动极光光带
+        this.drawAuroraRibbons();
+        // 4. 绘制时空曲率与引力天球网格
+        this.drawSpacetimeGrid();
+        // 5. 绘制密集三维景深星海与 JWST 星芒
+        this.drawDeepSpaceStarfield();
+        // 6. 方案 A：绘制主角卡片周边的漂浮星际余烬
+        this.drawCosmicEmbers();
+        // 7. 绘制偶发深空微流星
+        this.drawMeteors();
 
         requestAnimationFrame(() => this.animate());
       }
@@ -1651,9 +2133,8 @@
         }
       }
       if (!targetRect) {
-        const areaW = window.innerWidth * 0.6;
-        const left = Math.round(areaW * 0.24 + areaW * 0.1);
-        const top = Math.round(window.innerHeight * 0.5 - 255);
+        const left = Math.round(window.innerWidth * 0.36 - 180);
+        const top = Math.round(window.innerHeight * 0.52 - 255);
         targetRect = { left: Math.max(left, 40), top: Math.max(top, 60), width: 360, height: 510 };
       }
 
@@ -1982,8 +2463,12 @@
       }
 
       bindEvents() {
-        // 滚轮控制平滑滚动
-        this.container.addEventListener('wheel', (e) => {
+        // 滚轮控制平滑滚动：整个展台区域任意位置均可响应滚轮
+        const stageViewEl = document.getElementById('viewStage');
+        const wheelTarget = stageViewEl || this.container;
+
+        wheelTarget.addEventListener('wheel', (e) => {
+          if (currentView !== 'stage') return;
           e.preventDefault();
           const delta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 80);
           this.targetScroll += delta * 0.0035;
@@ -1992,6 +2477,8 @@
 
         // 触控与鼠标拖拽
         const onPointerDown = (e) => {
+          if (currentView !== 'stage') return;
+          if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.photo-modal-view')) return;
           this.isDragging = true;
           this.hasMoved = false;
           this.dragStartY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
@@ -2014,11 +2501,11 @@
           this.scheduleSnap();
         };
 
-        this.container.addEventListener('mousedown', onPointerDown);
+        wheelTarget.addEventListener('mousedown', onPointerDown);
         window.addEventListener('mousemove', onPointerMove);
         window.addEventListener('mouseup', onPointerUp);
 
-        this.container.addEventListener('touchstart', onPointerDown, { passive: true });
+        wheelTarget.addEventListener('touchstart', onPointerDown, { passive: true });
         window.addEventListener('touchmove', onPointerMove, { passive: true });
         window.addEventListener('touchend', onPointerUp);
       }
@@ -2099,15 +2586,22 @@
       }
 
       interpolateKeyframes(p) {
-        // 关键帧定义沿着 60% 构图对角线 (从左下移出到右上深入)
+        // 严格遵循用户手绘草图与 huyml.co：
+        // 1. 舞台沿单一 3D 对角线矢量贯穿整个视口 (左下到右上)
+        // 2. 主角卡片 (p=0) 位于中偏左 (x:0.36, y:0.52)，紧邻右侧文本 (left:49vw)，距离拉近至 40~60px
+        // 3. 主角卡片与上一个图片 (p=-1)、等待队列 (p=1) 之间拉开显著巨大间距 (Δu=0.50)，彻底孤立突出主角
+        // 4. 等待队列 (p>=1) 位于右上角背景深景深处，卡片之间间距紧密有序 (Δu=0.12~0.20)，层叠浮于文字上方深处
         const kfs = [
-          { p: -1.2, x: -0.15, y: 0.98, z: 140, s: 1.20, rx: 2, ry: 6, rz: -10, op: 0.0, br: 0.6 },
-          { p: -0.6, x: 0.05,  y: 0.82, z: 80,  s: 1.10, rx: 5, ry: 9, rz: -7,  op: 0.5, br: 0.85 },
-          { p: 0.0,  x: 0.24,  y: 0.64, z: 30,  s: 1.04, rx: 8, ry: 12, rz: -4, op: 1.0, br: 1.0 },
-          { p: 1.0,  x: 0.50,  y: 0.42, z: -80, s: 0.88, rx: 14, ry: 16, rz: -2, op: 0.88, br: 0.82 },
-          { p: 2.0,  x: 0.76,  y: 0.22, z: -200,s: 0.72, rx: 18, ry: 20, rz: 3,  op: 0.70, br: 0.68 },
-          { p: 3.0,  x: 0.92,  y: 0.12, z: -340,s: 0.56, rx: 22, ry: 24, rz: 6,  op: 0.40, br: 0.52 },
-          { p: 4.0,  x: 1.05,  y: 0.05, z: -500,s: 0.42, rx: 25, ry: 26, rz: 8,  op: 0.0, br: 0.3 }
+          { p: -1.4, x: -0.09, y: 0.95, z: 160,  s: 0.65, rx: 0,  ry: 3,  rz: -12, op: 0.0, br: 0.5 },
+          { p: -1.0, x: 0.05,  y: 0.81, z: 100,  s: 0.78, rx: 4,  ry: 7,  rz: -9,  op: 0.45,br: 0.75 },
+          { p: -0.5, x: 0.20,  y: 0.66, z: 70,   s: 0.96, rx: 6,  ry: 10, rz: -6,  op: 0.85,br: 0.90 },
+          { p: 0.0,  x: 0.35,  y: 0.52, z: 40,   s: 1.15, rx: 8,  ry: 12, rz: -4,  op: 1.0, br: 1.0 },
+          { p: 0.5,  x: 0.53,  y: 0.35, z: -70,  s: 0.88, rx: 11, ry: 14, rz: -3,  op: 0.90,br: 0.90 },
+          { p: 1.0,  x: 0.72,  y: 0.18, z: -180, s: 0.60, rx: 14, ry: 16, rz: -2,  op: 0.80,br: 0.80 },
+          { p: 2.0,  x: 0.81,  y: 0.11, z: -300, s: 0.48, rx: 17, ry: 18, rz: 1,   op: 0.65,br: 0.68 },
+          { p: 3.0,  x: 0.88,  y: 0.06, z: -420, s: 0.36, rx: 20, ry: 21, rz: 4,   op: 0.45,br: 0.52 },
+          { p: 4.0,  x: 0.94,  y: 0.01, z: -540, s: 0.26, rx: 23, ry: 24, rz: 7,   op: 0.18,br: 0.40 },
+          { p: 4.8,  x: 0.98,  y: -0.02,z: -660, s: 0.18, rx: 25, ry: 26, rz: 9,   op: 0.0, br: 0.25 }
         ];
 
         if (p <= kfs[0].p) return kfs[0];
@@ -2131,7 +2625,7 @@
             };
           }
         }
-        return kfs[2];
+        return kfs[3];
       }
 
       loop() {
@@ -2143,9 +2637,8 @@
         // 物理平滑缓动 Lerp
         this.currentScroll += (this.targetScroll - this.currentScroll) * 0.09;
 
-        const containerRect = this.container.getBoundingClientRect();
-        const cw = containerRect.width || (window.innerWidth * 0.6);
-        const ch = containerRect.height || window.innerHeight;
+        const cw = window.innerWidth;
+        const ch = window.innerHeight;
 
         const N = this.count;
         const normalizedActive = ((Math.round(this.currentScroll) % N) + N) % N;
@@ -2162,7 +2655,7 @@
           while (p >= N - 1.5) p -= N;
 
           // 距离视野外直接隐藏优化性能
-          if (p < -1.4 || p > 4.2) {
+          if (p < -1.4 || p > 4.8) {
             card.style.display = 'none';
             return;
           }
@@ -2198,7 +2691,16 @@
           card.style.transform = `translate3d(${pixelX.toFixed(1)}px, ${pixelY.toFixed(1)}px, ${translateZ.toFixed(1)}px) scale(${scale.toFixed(3)}) rotateX(${rotateX.toFixed(1)}deg) rotateY(${rotateY.toFixed(1)}deg) rotateZ(${rotateZ.toFixed(1)}deg)`;
           card.style.opacity = trans.op.toFixed(3);
           card.style.filter = `brightness(${trans.br.toFixed(2)})`;
-          card.style.zIndex = Math.round((1 - Math.abs(p) * 0.25) * 50);
+
+          let zIdx = 10;
+          if (Math.abs(p) < 0.5) {
+            zIdx = 35; // 主角卡片在最前层
+          } else if (p < 0) {
+            zIdx = 20; // 正在退出的卡片
+          } else {
+            zIdx = Math.max(1, Math.round(18 - p * 3)); // 队列中的卡片在深层 (15, 12, 9...)，位于文字(z-index: 25)后方
+          }
+          card.style.zIndex = zIdx;
 
           if (Math.abs(p) < 0.4) {
             card.classList.add('is-active');
@@ -2223,7 +2725,7 @@
         // 微过渡淡入淡出动画
         this.infoArea.classList.add('updating');
         setTimeout(() => {
-          stageTitleZh.textContent = `P${activeImgIndex + 1}:${img.title || img.name} /`;
+          stageTitleZh.textContent = `P${activeImgIndex + 1}: ${img.title || img.name} /`;
           stageTitleEn.textContent = img.title_en || 'ARTWORK';
 
           const stageParasContainer = document.getElementById('stageParagraphs');
